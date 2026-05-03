@@ -1,0 +1,7 @@
+
+# ===== fractary-core (managed) =====
+env/.env
+env/.env.*
+!env/.env.example
+# ===== end fractary-core =====
+codex/cache/

@@ -16,8 +16,21 @@ yarn-debug.log*
 
 # Local env / secrets
 .env
+.env.*
+!.env.example
 .env.local
 .corthography/
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# ===== fractary-logs (managed) =====
+logs/_archive/
+# ===== end fractary-logs =====
+
+# ===== fractary-docs (managed) =====
+docs/_archive/
+# ===== end fractary-docs =====
 
 # Test artifacts
 coverage/
