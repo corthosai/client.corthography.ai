@@ -1,0 +1,19 @@
+{
+  "name": "corthography-press-client",
+  "version": "0.1.0",
+  "description": "Corthography Press partner client — slash commands for template-query / template-render / template-publish workflows. Wraps the @corthography/cli binary.",
+  "author": {
+    "name": "Corthos",
+    "url": "https://github.com/corthosai"
+  },
+  "homepage": "https://github.com/corthosai/client.corthography.ai",
+  "repository": "https://github.com/corthosai/client.corthography.ai",
+  "license": "UNLICENSED",
+  "keywords": [
+    "corthography",
+    "corthography-press",
+    "client",
+    "partner-tools"
+  ],
+  "skills": "./.claude/skills/"
+}
