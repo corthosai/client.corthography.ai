@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "TypeScript SDK, CLI, and Claude plugin for Corthography Press",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],

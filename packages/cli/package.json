@@ -2,7 +2,7 @@
   "name": "@corthography/cli",
   "version": "0.1.0",
   "description": "Corthography Press command-line interface",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
