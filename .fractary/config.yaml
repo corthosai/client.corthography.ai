@@ -1,0 +1,96 @@
+version: '2.0'
+repo:
+  active_handler: github
+  handlers:
+    github:
+      owner: corthosai
+      repo: client.corthography.ai
+      token: ${GITHUB_TOKEN}
+      api_url: https://api.github.com
+  worktree:
+    location: .claude/worktrees
+    naming:
+      with_work_id: work-id-{id}
+      default: random-words
+  defaults:
+    environments:
+      prod:
+        branch: main
+        protected: true
+      test:
+        branch: test
+        protected: false
+    default_environment: test
+    pr:
+      merge:
+        strategy: squash
+        delete_branch: true
+work:
+  active_handler: github
+  handlers:
+    github:
+      owner: corthosai
+      repo: client.corthography.ai
+      token: ${GITHUB_TOKEN}
+      api_url: https://api.github.com
+file:
+  schema_version: '2.0'
+  active_handler: default
+  handlers:
+    default:
+      type: local
+      local:
+        base_path: .
+    logs-write:
+      type: local
+      local:
+        base_path: logs
+    logs-archive:
+      type: local
+      local:
+        base_path: logs/_archive
+    docs-write:
+      type: local
+      local:
+        base_path: docs
+    docs-archive:
+      type: local
+      local:
+        base_path: docs/_archive
+docs:
+  schema_version: '1.1'
+  custom_templates_path: docs/templates/manifest.yaml
+  storage:
+    file_handlers:
+      - name: default
+        write: docs-write
+        archive: docs-archive
+logs:
+  schema_version: '2.0'
+  storage:
+    file_handlers:
+      - name: default
+        write: logs-write
+        archive: logs-archive
+codex:
+  schema_version: '2.0'
+  organization: corthosai
+  project: client.corthography.ai
+  codex_repo: codex.corthos.ai
+  remotes:
+    corthosai/codex.corthos.ai:
+      token: ${GITHUB_TOKEN}
+  sync:
+    to_codex:
+      include:
+        - docs/**
+        - README.md
+        - CLAUDE.md
+      exclude:
+        - '*.tmp'
+        - _archive/**
+    from_codex:
+      include:
+        - codex://corthosai/codex.corthos.ai/docs/**
+      exclude:
+        - _archive/**
