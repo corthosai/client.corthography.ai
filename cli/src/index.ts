@@ -4,7 +4,7 @@
  */
 
 import { Command } from "commander";
-import { PressClient } from "@corthography/client";
+import { PressClient } from "@corthography/sdk";
 import { resolveConfig } from "./config.js";
 import { formatJson, formatRunHumanReadable } from "./format.js";
 

@@ -11,7 +11,7 @@ This is the **partner-facing** surface of the multi-tenant Press service (SPEC-0
     ↓ corthography render ...
 [ @corthography/cli ]
     ↓ PressClient.startRun(...)
-[ @corthography/client SDK ]
+[ @corthography/sdk ]
     ↓ HTTPS + Bearer token
 [ api.corthography.ai ]
     ↓ AssumeRole + StartExecution
@@ -24,8 +24,8 @@ The SDK and CLI are public; the API and engine are private. Security is enforced
 
 | Package | What it is | Who uses it |
 |---|---|---|
-| [`@corthography/client`](./packages/sdk) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
-| [`@corthography/cli`](./packages/cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
+| [`@corthography/sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
+| [`@corthography/cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
 | Claude plugin | Slash commands (`/press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
 
 All three are versioned together.
@@ -57,11 +57,11 @@ corthography --help
 ### SDK (programmatic)
 
 ```bash
-npm install @corthography/client
+npm install @corthography/sdk
 ```
 
 ```ts
-import { PressClient } from "@corthography/client";
+import { PressClient } from "@corthography/sdk";
 
 const client = new PressClient({
   token: process.env.CORTHOGRAPHY_TOKEN!,
@@ -115,7 +115,7 @@ npm run build
 npm test
 
 # Run the CLI from source
-node packages/cli/dist/bin.js --help
+node cli/dist/bin.js --help
 ```
 
 Requires Node 20+.

@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true
   },
-  "references": [{ "path": "../sdk" }],
+  "references": [{ "path": "../sdk/js" }],
   "include": ["src/**/*"]
 }
