@@ -17,7 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@corthography/client": "0.1.0",
+    "@corthography/sdk": "0.1.0",
     "commander": "^12.0.0"
   },
   "engines": {

@@ -5,10 +5,11 @@
   "description": "TypeScript SDK, CLI, and Claude plugin for Corthography Press",
   "license": "MIT",
   "workspaces": [
-    "packages/*"
+    "sdk/js",
+    "cli"
   ],
   "scripts": {
-    "build": "npm run build -w @corthography/client && npm run build -w @corthography/cli",
+    "build": "npm run build -w @corthography/sdk && npm run build -w @corthography/cli",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo"
