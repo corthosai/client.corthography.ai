@@ -6,8 +6,8 @@ The **partner-facing client tools** for Corthography Press. One repo, three deli
 
 | Package | What it is | Who uses it |
 |---|---|---|
-| [`@corthography/sdk`](./sdk/js) | Typed TypeScript SDK wrapping the REST API | Custom integrations, CI scripts |
-| [`@corthography/cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
+| [`@corthos/corthography-sdk`](./sdk/js) | Typed TypeScript SDK wrapping the REST API | Custom integrations, CI scripts |
+| [`@corthos/corthography-cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
 | Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
 
 ## Where it sits in the stack
@@ -15,7 +15,7 @@ The **partner-facing client tools** for Corthography Press. One repo, three deli
 ```
 [ Partner Claude Code (in dms.corthography.ai etc.) ]
         ↓ /corthography-press-render dms/.../colleges/overview+computer-science-degree
-[ THIS REPO — Claude plugin → @corthography/cli → @corthography/sdk ]
+[ THIS REPO — Claude plugin → @corthos/corthography-cli → @corthos/corthography-sdk ]
         ↓ HTTPS + Bearer token
 [ api.corthography.ai ]    ← github.com/corthosai/api.corthography.ai
         ↓ AssumeRole + StartExecution
@@ -37,7 +37,7 @@ gh issue list --repo corthosai/client.corthography.ai --state open
 Phase 6 is bootstrapped. The remaining work to make the client usable for the dms pilot:
 
 - **#3** Add GitHub Actions CI workflow
-- **#4** Set up `@corthography` npm scope and publish v0.1.0
+- **#4** Set up `@corthos` npm scope and publish v0.1.0
 - **#5** End-to-end smoke test against deployed api.corthography.ai
 - **#6** *(optional)* Replace hand-written types with OpenAPI codegen
 
@@ -75,7 +75,7 @@ node cli/dist/bin.js --help
 - The CLI binary is at `cli/dist/bin.js` after build. The `bin` mapping in `cli/package.json` makes it `corthography` once installed globally.
 - Tests use `vitest`, not Jest. Vitest API is mostly Jest-compatible but `vi.fn()` not `jest.fn()`.
 - `tsconfig.json` at the root is the **base** config. Each package's `tsconfig.json` extends it. Don't add target/module overrides at the root; they cascade unexpectedly.
-- The `cli` package depends on `@corthography/sdk` via npm workspaces — don't add a relative path import; let the workspace resolution handle it.
+- The `cli` package depends on `@corthos/corthography-sdk` via npm workspaces — don't add a relative path import; let the workspace resolution handle it.
 - Node 22+ has `fetch` globally; we use it via the `fetch?: typeof fetch` constructor option to allow test injection. Don't import `node-fetch` — that breaks browser/edge runtime compatibility.
 
 ## Distribution status (as of bootstrap)

@@ -9,9 +9,9 @@ This is the **partner-facing** surface of the multi-tenant Press service (SPEC-0
     ↓ /corthography-press-render dms/.../colleges/overview+computer-science-degree
 [ Claude plugin (this repo) ]
     ↓ corthography render ...
-[ @corthography/cli ]
+[ @corthos/corthography-cli ]
     ↓ PressClient.startRun(...)
-[ @corthography/sdk ]
+[ @corthos/corthography-sdk ]
     ↓ HTTPS + Bearer token
 [ api.corthography.ai ]
     ↓ AssumeRole + StartExecution
@@ -24,8 +24,8 @@ The SDK and CLI are public; the API and engine are private. Security is enforced
 
 | Package | What it is | Who uses it |
 |---|---|---|
-| [`@corthography/sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
-| [`@corthography/cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
+| [`@corthos/corthography-sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
+| [`@corthos/corthography-cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
 | Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
 
 All three are versioned together.
@@ -62,18 +62,18 @@ export CORTHOGRAPHY_API=https://api.corthography.ai/v1
 ### CLI (standalone)
 
 ```bash
-npm install -g @corthography/cli
+npm install -g @corthos/corthography-cli
 corthography --help
 ```
 
 ### SDK (programmatic)
 
 ```bash
-npm install @corthography/sdk
+npm install @corthos/corthography-sdk
 ```
 
 ```ts
-import { PressClient } from "@corthography/sdk";
+import { PressClient } from "@corthos/corthography-sdk";
 
 const client = new PressClient({
   token: process.env.CORTHOGRAPHY_TOKEN!,
@@ -134,4 +134,4 @@ Requires Node 20+.
 
 ## Status
 
-🟡 **Bootstrap (phase 6 of SPEC-00018)** — initial scaffold landed; not yet published to npm. Partners can clone the repo and run from source, but `npm install -g @corthography/cli` won't work until phase 7 publishes the packages.
+🟡 **Bootstrap (phase 6 of SPEC-00018)** — initial scaffold landed; not yet published to npm. Partners can clone the repo and run from source, but `npm install -g @corthos/corthography-cli` won't work until phase 7 publishes the packages.

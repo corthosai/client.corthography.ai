@@ -19,9 +19,9 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: npm publish --workspace @corthography/sdk --access public --provenance
+      - run: npm publish --workspace @corthos/corthography-sdk --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm publish --workspace @corthography/cli --access public --provenance
+      - run: npm publish --workspace @corthos/corthography-cli --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
