@@ -134,4 +134,4 @@ Requires Node 20+.
 
 ## Status
 
-🟡 **Bootstrap (phase 6 of SPEC-00018)** — initial scaffold landed; not yet published to npm. Partners can clone the repo and run from source, but `npm install -g @corthos/corthography-cli` won't work until phase 7 publishes the packages.
+🟢 **Phase 7 (SPEC-00018)** — `@corthos/corthography-sdk@0.1.0` and `@corthos/corthography-cli@0.1.0` are live on the public npm registry with signed provenance attestations. The remaining gating item before partners can run end-to-end workflows is `api.corthography.ai` reaching production.

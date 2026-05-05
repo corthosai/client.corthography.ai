@@ -82,7 +82,7 @@ node cli/dist/bin.js --help
 
 - ✅ Builds + tests pass locally
 - ✅ Public GitHub repo
-- ❌ Not yet on npm — partners must build from source until #4 lands
+- ✅ Published to npm as `@corthos/corthography-{sdk,cli}@0.1.0` with provenance attestation
 - ❌ Not yet wired into a real api endpoint — #5 closes that loop
 
-When all three of those flip to ✅, partners can `/plugin install corthosai/client.corthography.ai` and start running workflows.
+When the api endpoint flips to ✅, partners can `/plugin install corthosai/client.corthography.ai` and start running workflows end-to-end.
