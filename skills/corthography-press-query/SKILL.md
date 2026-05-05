@@ -9,14 +9,14 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `<target>` | Yes | Canonical `{owner}/{collection}/{type}/{name}+{project_slug}` string |
+| `<target>` | Yes | `{owner}/{collection}/{type}/{name}+{project_slug}`, or the 3-segment shorthand if `CORTHOGRAPHY_OWNER` is set |
 | `--env <test\|prod>` | No | Environment (default: test) |
 | `--ref <branch\|tag\|sha>` | No | Pin a specific git ref of the partner template repo |
 | `--json` | No | Output JSON instead of human-readable text |
 
 ## Procedure
 
-1. Confirm the partner has `CORTHOGRAPHY_TOKEN` set (env var or `~/.corthography/credentials`)
+1. Confirm `CORTHOGRAPHY_TOKEN` is reachable. The CLI checks, in order: `--token` flag, env var, `.fractary/env/.env.<env>` (walked up from cwd), `~/.corthography/credentials`.
 2. Run:
 
    ```bash
@@ -27,7 +27,8 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
 
 ## Errors and what they mean
 
-- `CORTHOGRAPHY_TOKEN` missing → `corthography` exits non-zero with a clear message; ask the partner to set the env var
+- `CORTHOGRAPHY_TOKEN` missing → `corthography` exits non-zero with a clear message; ask the partner to set it via env var, `.fractary/env/.env.<env>`, or `~/.corthography/credentials`
+- "missing the owner segment" → the partner used a 3-segment target without `CORTHOGRAPHY_OWNER` set. Either prepend the owner (e.g., `dms/...`) or set the env var.
 - 403 / `PressScopeError` → the target is not in the partner's authorization registry. Don't retry; surface the API error message verbatim
 - 429 / `PressQuotaError` → too many concurrent runs; suggest waiting for an in-flight run to complete
 

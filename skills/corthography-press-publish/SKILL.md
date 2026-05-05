@@ -9,7 +9,7 @@ description: Stage 3 of the Corthography Press pipeline — distribute rendered 
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `<target>` | Yes | `{owner}/{collection}/{type}/{name}+{project_slug}` |
+| `<target>` | Yes | `{owner}/{collection}/{type}/{name}+{project_slug}`, or the 3-segment shorthand if `CORTHOGRAPHY_OWNER` is set |
 | `--env <test\|prod>` | No | Environment (default: test) |
 | `--ref <branch\|tag\|sha>` | No | Pin a specific git ref |
 | `--json` | No | JSON output |
