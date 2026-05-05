@@ -16,14 +16,15 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
 
 ## Procedure
 
-1. Confirm `CORTHOGRAPHY_TOKEN` is reachable. The CLI checks, in order: `--token` flag, env var, `.fractary/env/.env.<env>` (walked up from cwd), `~/.corthography/credentials`.
-2. Run:
+Run the CLI directly. **Do not pre-check `CORTHOGRAPHY_TOKEN` or any credential file** — the CLI handles credential resolution itself and emits a precise error naming the missing piece if anything's wrong.
 
-   ```bash
-   corthography query <target> [--env test|prod] [--ref <ref>] [--json]
-   ```
+```bash
+corthography query <target> [--env test|prod] [--ref <ref>] [--json]
+```
 
-3. Print the returned `run_id` and stop. The partner can poll status via `/corthography-press-status {run_id}`.
+Print the returned `run_id` and stop. The partner can poll status via `/corthography-press-status {run_id}`. If the CLI exits non-zero, surface its error message verbatim — don't guess.
+
+Credential resolution (handled inside the CLI, listed for reference only): `--token` flag → `CORTHOGRAPHY_TOKEN` env var → `.fractary/env/.env.<env>` (walked up from cwd, picked to match `--env`) → `~/.corthography/credentials`.
 
 ## Errors and what they mean
 
