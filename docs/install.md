@@ -22,20 +22,9 @@ Restart Claude Code. Slash commands `/corthography-press-query`, `/corthography-
 
 ## 2. CLI binary
 
-Once `@corthos/corthography-cli` is published to npm (phase 7):
-
 ```bash
 npm install -g @corthos/corthography-cli
-```
-
-For now (during the bootstrap phase), build from source:
-
-```bash
-git clone https://github.com/corthosai/client.corthography.ai.git
-cd client.corthography.ai
-npm install
-npm run build
-node cli/dist/bin.js --help
+corthography --help
 ```
 
 ## 3. SDK (programmatic)
