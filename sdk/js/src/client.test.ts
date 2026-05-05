@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { PressClient } from "./client.js";
-import { PressAuthError, PressNotFoundError, PressScopeError } from "./errors.js";
+import { PressApiError, PressAuthError, PressNetworkError, PressNotFoundError, PressScopeError } from "./errors.js";
 
 function mockFetch(handler: (req: Request) => Response | Promise<Response>): typeof fetch {
   return (async (input: string | URL | Request, init?: RequestInit) => {
@@ -127,6 +127,93 @@ describe("PressClient", () => {
     const client = new PressClient({ token: "x", fetch: fetchImpl });
     const projects = await client.listProjects();
     expect(projects).toEqual([{ templateKey: "dms/c/t/n", projectSlugs: ["a", "b"] }]);
+  });
+
+  it("normalises a base URL without /v1 by appending it", async () => {
+    let seenUrl = "";
+    const fetchImpl = mockFetch(async (req) => {
+      seenUrl = req.url;
+      return new Response(JSON.stringify({ status: "ok", version: "0.1.0" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const client = new PressClient({
+      token: "x",
+      baseUrl: "https://test.api.corthography.ai",
+      fetch: fetchImpl,
+    });
+    await client.health();
+    expect(seenUrl).toBe("https://test.api.corthography.ai/v1/health");
+  });
+
+  it("normalises a base URL with trailing slash", async () => {
+    let seenUrl = "";
+    const fetchImpl = mockFetch(async (req) => {
+      seenUrl = req.url;
+      return new Response(JSON.stringify({ status: "ok", version: "0.1.0" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const client = new PressClient({
+      token: "x",
+      baseUrl: "https://test.api.corthography.ai/v1/",
+      fetch: fetchImpl,
+    });
+    await client.health();
+    expect(seenUrl).toBe("https://test.api.corthography.ai/v1/health");
+  });
+
+  it("non-envelope error responses include status + URL + body in the message", async () => {
+    const fetchImpl = mockFetch(
+      async () =>
+        new Response('{"message":"Not Found"}', {
+          status: 404,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+    const client = new PressClient({
+      token: "x",
+      baseUrl: "https://api.example/v1",
+      fetch: fetchImpl,
+    });
+    let caught: unknown;
+    try {
+      await client.health();
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(PressApiError);
+    const msg = (caught as Error).message;
+    expect(msg).toContain("HTTP 404");
+    expect(msg).toContain("https://api.example/v1/health");
+    expect(msg).toContain("UnknownError");
+    expect(msg).toContain("Not Found");
+    expect((caught as PressApiError).rawBody).toBe('{"message":"Not Found"}');
+    expect((caught as PressApiError).url).toBe("https://api.example/v1/health");
+  });
+
+  it("DNS / connection failures surface as PressNetworkError with the URL", async () => {
+    const fetchImpl = (() => {
+      throw Object.assign(new TypeError("fetch failed"), {
+        cause: { code: "ENOTFOUND", hostname: "no-such-host.example" },
+      });
+    }) as unknown as typeof fetch;
+    const client = new PressClient({
+      token: "x",
+      baseUrl: "https://no-such-host.example/v1",
+      fetch: fetchImpl,
+    });
+    let caught: unknown;
+    try {
+      await client.health();
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(PressNetworkError);
+    expect((caught as Error).message).toContain("no-such-host.example/v1/health");
+    expect((caught as Error).message).toContain("fetch failed");
   });
 
   it("aborts a request that exceeds timeoutMs", async () => {

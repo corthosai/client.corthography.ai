@@ -114,9 +114,11 @@ These can come from any of the following, listed high → low precedence:
 
 ```bash
 CORTHOGRAPHY_TOKEN=...                              # required
-CORTHOGRAPHY_API=https://api.corthography.ai/v1     # optional, defaults to this
+CORTHOGRAPHY_API=https://test.api.corthography.ai   # optional; defaults to test or prod based on --env
 CORTHOGRAPHY_OWNER=dms                              # optional, see "Owner inference" below
 ```
+
+**Default API URL**: when `CORTHOGRAPHY_API` is not set, the CLI defaults to `https://test.api.corthography.ai/v1` for `--env test` and `https://api.corthography.ai/v1` for `--env prod`. The `/v1` suffix is added automatically if you supply a base URL without it.
 
 The fractary file lookup pairs `--env test` with `.fractary/env/.env.test` and `--env prod` with `.fractary/env/.env.prod`, so partners can keep credentials env-aware alongside the rest of their Fractary configuration.
 

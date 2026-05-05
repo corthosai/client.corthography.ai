@@ -9,6 +9,9 @@ export interface ApiErrorBody {
   error: string;
   detail?: string | null;
   request_id?: string | null;
+  /** Optional context the SDK attaches for diagnosability. */
+  url?: string;
+  rawBody?: string;
 }
 
 export class PressApiError extends Error {
@@ -16,14 +19,48 @@ export class PressApiError extends Error {
   readonly errorCode: string;
   readonly detail?: string;
   readonly requestId?: string;
+  readonly url?: string;
+  readonly rawBody?: string;
 
   constructor(status: number, body: ApiErrorBody, message?: string) {
-    super(message ?? `${body.error}${body.detail ? `: ${body.detail}` : ""}`);
+    super(message ?? formatApiMessage(status, body));
     this.name = "PressApiError";
     this.status = status;
     this.errorCode = body.error;
     this.detail = body.detail ?? undefined;
     this.requestId = body.request_id ?? undefined;
+    this.url = body.url ?? undefined;
+    this.rawBody = body.rawBody ?? undefined;
+  }
+}
+
+function formatApiMessage(status: number, body: ApiErrorBody): string {
+  const head = body.url ? `HTTP ${status} from ${body.url}: ${body.error}` : `HTTP ${status}: ${body.error}`;
+  const detail = body.detail ? ` — ${body.detail}` : "";
+  const reqId = body.request_id ? ` [request_id=${body.request_id}]` : "";
+  // Only show raw body if it adds information beyond the structured fields.
+  const raw =
+    body.rawBody && body.error === "UnknownError" && !body.detail
+      ? ` — body: ${truncate(body.rawBody, 500)}`
+      : "";
+  return `${head}${detail}${reqId}${raw}`;
+}
+
+function truncate(s: string, max: number): string {
+  return s.length <= max ? s : `${s.slice(0, max)}…[truncated, ${s.length - max} more chars]`;
+}
+
+/** Network-layer failure (DNS, connection refused, TLS, timeout) — no HTTP response. */
+export class PressNetworkError extends Error {
+  readonly url: string;
+  readonly cause?: unknown;
+
+  constructor(url: string, cause: unknown) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    super(`could not reach ${url}: ${reason}`);
+    this.name = "PressNetworkError";
+    this.url = url;
+    this.cause = cause;
   }
 }
 

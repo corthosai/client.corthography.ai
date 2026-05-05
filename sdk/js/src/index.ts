@@ -17,4 +17,5 @@ export {
   PressScopeError,
   PressQuotaError,
   PressNotFoundError,
+  PressNetworkError,
 } from "./errors.js";

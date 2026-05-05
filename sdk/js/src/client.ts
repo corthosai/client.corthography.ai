@@ -1,4 +1,4 @@
-import { makeApiError, PressApiError } from "./errors.js";
+import { makeApiError, PressApiError, PressNetworkError } from "./errors.js";
 import type {
   ApproveRunRequest,
   ClientOptions,
@@ -30,7 +30,7 @@ export class PressClient {
       throw new Error("PressClient: `token` is required");
     }
     this.token = opts.token;
-    this.baseUrl = (opts.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
+    this.baseUrl = normalizeBaseUrl(opts.baseUrl ?? DEFAULT_BASE_URL);
     this.fetchImpl = opts.fetch ?? fetch;
     this.timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
@@ -130,6 +130,8 @@ export class PressClient {
         body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
         signal: controller.signal,
       });
+    } catch (e) {
+      throw new PressNetworkError(url, e);
     } finally {
       clearTimeout(timeout);
     }
@@ -153,10 +155,18 @@ export class PressClient {
         error: body.error ?? "UnknownError",
         detail: body.detail ?? null,
         request_id: body.request_id ?? null,
+        url,
+        rawBody: text,
       });
     }
     return parsed as T;
   }
+}
+
+/** Accept any of `host`, `host/`, `host/v1`, `host/v1/` and return `host/v1`. */
+function normalizeBaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  return /\/v\d+$/.test(trimmed) ? trimmed : `${trimmed}/v1`;
 }
 
 // ---------------------------------------------------------------- helpers

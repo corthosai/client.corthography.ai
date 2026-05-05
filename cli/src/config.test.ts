@@ -133,6 +133,39 @@ describe("resolveConfig", () => {
     expect(cfg.token).toBe("walked");
   });
 
+  it("default API URL is the test host when --env test (or unset)", () => {
+    writeFractaryEnv("test", "CORTHOGRAPHY_TOKEN=t\n");
+    const cfg = resolveConfig({
+      env: {},
+      credentialsPath: "/non-existent",
+      fractaryRoot: tmpRoot,
+      cliEnv: "test",
+    });
+    expect(cfg.apiUrl).toBe("https://test.api.corthography.ai/v1");
+  });
+
+  it("default API URL is the prod host when --env prod", () => {
+    writeFractaryEnv("prod", "CORTHOGRAPHY_TOKEN=t\n");
+    const cfg = resolveConfig({
+      env: {},
+      credentialsPath: "/non-existent",
+      fractaryRoot: tmpRoot,
+      cliEnv: "prod",
+    });
+    expect(cfg.apiUrl).toBe("https://api.corthography.ai/v1");
+  });
+
+  it("explicit CORTHOGRAPHY_API still overrides the env-aware default", () => {
+    writeFractaryEnv("test", "CORTHOGRAPHY_TOKEN=t\n");
+    const cfg = resolveConfig({
+      env: { CORTHOGRAPHY_API: "https://custom.example/v1" },
+      credentialsPath: "/non-existent",
+      fractaryRoot: tmpRoot,
+      cliEnv: "test",
+    });
+    expect(cfg.apiUrl).toBe("https://custom.example/v1");
+  });
+
   it("empty fractaryRoot disables the lookup", () => {
     writeFractaryEnv("test", "CORTHOGRAPHY_TOKEN=should-not-be-read\n");
     expect(() =>

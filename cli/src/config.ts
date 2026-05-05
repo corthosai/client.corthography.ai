@@ -19,7 +19,12 @@ export interface ResolvedConfig {
   owner?: string;
 }
 
-const DEFAULT_API_URL = "https://api.corthography.ai/v1";
+const PROD_API_URL = "https://api.corthography.ai/v1";
+const TEST_API_URL = "https://test.api.corthography.ai/v1";
+
+function defaultApiUrl(cliEnv: string): string {
+  return cliEnv === "prod" ? PROD_API_URL : TEST_API_URL;
+}
 
 export interface ResolveOptions {
   cliToken?: string;
@@ -51,7 +56,7 @@ export function resolveConfig(opts: ResolveOptions = {}): ResolvedConfig {
 
   const token = opts.cliToken ?? env.CORTHOGRAPHY_TOKEN ?? fractaryCreds.token ?? fileCreds.token;
   const apiUrl =
-    opts.cliApi ?? env.CORTHOGRAPHY_API ?? fractaryCreds.apiUrl ?? fileCreds.apiUrl ?? DEFAULT_API_URL;
+    opts.cliApi ?? env.CORTHOGRAPHY_API ?? fractaryCreds.apiUrl ?? fileCreds.apiUrl ?? defaultApiUrl(cliEnv);
   const owner = env.CORTHOGRAPHY_OWNER ?? fractaryCreds.owner ?? fileCreds.owner;
 
   if (!token) {

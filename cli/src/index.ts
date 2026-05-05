@@ -3,11 +3,24 @@
  * The bin shim (`bin.ts`) just calls `runCli(process.argv)`.
  */
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { PressClient } from "@corthos/corthography-sdk";
 import { resolveConfig } from "./config.js";
 import { resolveTarget } from "./target.js";
 import { formatJson, formatRunHumanReadable } from "./format.js";
+
+function readCliVersion(): string {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")) as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
 
 export interface CliDeps {
   /** Optional client factory. Tests inject a stub. */
@@ -33,6 +46,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
 
   const program = new Command("corthography");
   program
+    .version(readCliVersion(), "-v, --version", "Print the CLI version")
     .description("Corthography Press CLI — start workflow runs and inspect run state")
     .option("--token <token>", "Bearer token (env: CORTHOGRAPHY_TOKEN)")
     .option("--api <url>", "API base URL (env: CORTHOGRAPHY_API)")
@@ -174,9 +188,10 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     await program.parseAsync(argv);
     return 0;
   } catch (e) {
-    if (typeof e === "object" && e !== null && "code" in e && (e as { code: string }).code?.startsWith("commander.")) {
-      // commander already printed help/version/error
-      return 1;
+    const code = typeof e === "object" && e !== null && "code" in e ? (e as { code?: string }).code : undefined;
+    if (typeof code === "string" && code.startsWith("commander.")) {
+      // --help and --version are normal terminations, not failures.
+      return code === "commander.version" || code.startsWith("commander.help") ? 0 : 1;
     }
     err(e instanceof Error ? e.message : String(e));
     return 1;
