@@ -1,20 +1,21 @@
 {
-  "name": "corthography-press-client",
-  "displayName": "Corthography Press Client",
-  "description": "Corthography Press partner client — slash commands for query / render / publish workflows. Wraps the @corthos/corthography-cli binary.",
-  "version": "0.1.0",
-  "author": {
-    "name": "Corthos",
-    "url": "https://github.com/corthosai"
-  },
-  "homepage": "https://github.com/corthosai/client.corthography.ai",
-  "repository": "https://github.com/corthosai/client.corthography.ai",
-  "license": "MIT",
-  "keywords": [
-    "corthography",
-    "corthography-press",
-    "client",
-    "partner-tools"
-  ],
-  "skills": "./skills/"
+    "name": "corthos-corthography",
+    "displayName": "Corthos AI Corthography Client",
+    "description": "Corthos AI Corthography partner client — slash commands for query / render / publish workflows. Wraps the @corthos/corthography-cli binary.",
+    "version": "0.1.1",
+    "author": {
+        "name": "Corthos",
+        "url": "https://github.com/corthosai"
+    },
+    "homepage": "https://github.com/corthosai/client.corthography.ai",
+    "repository": "https://github.com/corthosai/client.corthography.ai",
+    "license": "MIT",
+    "keywords": [
+        "corthos",
+        "corthography",
+        "corthography-press",
+        "client",
+        "partner-tools"
+    ],
+    "skills": "./skills/"
 }

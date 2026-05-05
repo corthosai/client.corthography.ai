@@ -1,36 +1,33 @@
 {
-  "name": "corthography-press-client",
-  "version": "0.1.0",
-  "description": "Corthography Press partner client — slash commands for query / render / publish workflows. Wraps the @corthos/corthography-cli binary.",
-  "author": {
-    "name": "Corthos",
-    "url": "https://github.com/corthosai"
-  },
-  "homepage": "https://github.com/corthosai/client.corthography.ai",
-  "repository": "https://github.com/corthosai/client.corthography.ai",
-  "license": "MIT",
-  "keywords": [
-    "corthography",
-    "corthography-press",
-    "client",
-    "partner-tools"
-  ],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Corthography Press Client",
-    "shortDescription": "Query, render, and publish Corthography Press workflows from your agent",
-    "longDescription": "Slash commands wrapping the @corthos/corthography-cli binary so partner agents can stage data (query), render Markdown (render), and publish to destination buckets (publish), plus status, logs, and approval gates.",
-    "developerName": "Corthos",
-    "category": "Coding",
-    "capabilities": [
-      "Interactive",
-      "Read",
-      "Write"
+    "name": "corthos-corthography",
+    "version": "0.1.1",
+    "description": "Corthos AI Corthography partner client — slash commands for query / render / publish workflows. Wraps the @corthos/corthography-cli binary.",
+    "author": {
+        "name": "Corthos",
+        "url": "https://github.com/corthosai"
+    },
+    "homepage": "https://github.com/corthosai/client.corthography.ai",
+    "repository": "https://github.com/corthosai/client.corthography.ai",
+    "license": "MIT",
+    "keywords": [
+        "corthos",
+        "corthography",
+        "corthography-press",
+        "client",
+        "partner-tools"
     ],
-    "defaultPrompt": [
-      "Render the latest Corthography Press template for my project.",
-      "What's the status of the press run I just kicked off?"
-    ],
-    "websiteURL": "https://github.com/corthosai/client.corthography.ai"
-  }
+    "skills": "./skills/",
+    "interface": {
+        "displayName": "Corthos AI Corthography Client",
+        "shortDescription": "Query, render, and publish Corthography workflows from your agent",
+        "longDescription": "Slash commands wrapping the @corthos/corthography-cli binary so partner agents can stage data (query), render Markdown (render), and publish to destination buckets (publish), plus status, logs, and approval gates.",
+        "developerName": "Corthos",
+        "category": "Coding",
+        "capabilities": ["Interactive", "Read", "Write"],
+        "defaultPrompt": [
+            "Render the latest Corthography template for my project.",
+            "What's the status of the press run I just kicked off?"
+        ],
+        "websiteURL": "https://github.com/corthosai/client.corthography.ai"
+    }
 }
