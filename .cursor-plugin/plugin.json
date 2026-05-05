@@ -1,7 +1,8 @@
 {
   "name": "corthography-press-client",
+  "displayName": "Corthography Press Client",
+  "description": "Corthography Press partner client — slash commands for query / render / publish workflows. Wraps the @corthography/cli binary.",
   "version": "0.1.0",
-  "description": "Corthography Press partner client — slash commands for template-query / template-render / template-publish workflows. Wraps the @corthography/cli binary.",
   "author": {
     "name": "Corthos",
     "url": "https://github.com/corthosai"

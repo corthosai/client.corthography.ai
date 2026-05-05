@@ -1,9 +1,9 @@
 ---
-name: press-list-templates
+name: corthography-press-list-templates
 description: List the Corthography Press templates the partner is authorized to target. Use to discover available templates before running a workflow.
 ---
 
-# /press-list-templates
+# /corthography-press-list-templates
 
 ## Procedure
 
