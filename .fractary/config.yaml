@@ -83,6 +83,13 @@ codex:
   sync:
     to_codex:
       include:
+        # docs/** covers both the legacy install.md (left as a
+        # self-contained partner reference) and the new partner-facing
+        # narratives at docs/client/**. The latter are tagged
+        # `visibility: external` in their frontmatter; codex routing
+        # forwards them to docs.corthography.ai. The legacy install.md
+        # has no `visibility:` key and stays inside this repo's
+        # audience boundary by default.
         - docs/**
         - README.md
         - CLAUDE.md
