@@ -18,7 +18,7 @@ export CORTHOGRAPHY_TOKEN=...
 export CORTHOGRAPHY_API=https://api.corthography.ai/v1
 ```
 
-Restart Claude Code. Slash commands `/press-query`, `/press-render`, etc. become available.
+Restart Claude Code. Slash commands `/corthography-press-query`, `/corthography-press-render`, etc. become available.
 
 ## 2. CLI binary
 

@@ -8,13 +8,13 @@ The **partner-facing client tools** for Corthography Press. One repo, three deli
 |---|---|---|
 | [`@corthography/sdk`](./sdk/js) | Typed TypeScript SDK wrapping the REST API | Custom integrations, CI scripts |
 | [`@corthography/cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
-| Claude plugin | Slash commands (`/press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
+| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
 
 ## Where it sits in the stack
 
 ```
 [ Partner Claude Code (in dms.corthography.ai etc.) ]
-        ↓ /press-render dms/.../colleges/overview+computer-science-degree
+        ↓ /corthography-press-render dms/.../colleges/overview+computer-science-degree
 [ THIS REPO — Claude plugin → @corthography/cli → @corthography/sdk ]
         ↓ HTTPS + Bearer token
 [ api.corthography.ai ]    ← github.com/corthosai/api.corthography.ai

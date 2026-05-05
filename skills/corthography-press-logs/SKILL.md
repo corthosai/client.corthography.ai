@@ -1,9 +1,9 @@
 ---
-name: press-logs
+name: corthography-press-logs
 description: Show the CloudWatch log group for a run so the partner can inspect detailed execution logs. Use when diagnosing a failed or stuck run.
 ---
 
-# /press-logs — Get the log group for a run
+# /corthography-press-logs — Get the log group for a run
 
 ## Arguments
 

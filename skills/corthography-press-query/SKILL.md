@@ -1,9 +1,9 @@
 ---
-name: press-query
+name: corthography-press-query
 description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data and stage chunked JSON in the partner's S3 area. Use when collecting fresh data for a project before rendering.
 ---
 
-# /press-query — Start a template-query run
+# /corthography-press-query — Start a template-query run
 
 ## Arguments
 
@@ -23,7 +23,7 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
    corthography query <target> [--env test|prod] [--ref <ref>] [--json]
    ```
 
-3. Print the returned `run_id` and stop. The partner can poll status via `/press-status {run_id}`.
+3. Print the returned `run_id` and stop. The partner can poll status via `/corthography-press-status {run_id}`.
 
 ## Errors and what they mean
 
@@ -33,5 +33,5 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
 
 ## Related
 
-- `/press-status` — check progress
-- `/press-render` — Stage 2 (after data is staged)
+- `/corthography-press-status` — check progress
+- `/corthography-press-render` — Stage 2 (after data is staged)

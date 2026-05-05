@@ -1,9 +1,9 @@
 ---
-name: press-approve
+name: corthography-press-approve
 description: Approve (or reject) a Corthography Press run paused at the production release gate. Use when a publish run with --env prod is awaiting human approval.
 ---
 
-# /press-approve — Release a paused prod run
+# /corthography-press-approve — Release a paused prod run
 
 ## Arguments
 

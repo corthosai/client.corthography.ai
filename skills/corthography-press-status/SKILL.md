@@ -1,9 +1,9 @@
 ---
-name: press-status
-description: Show the current status of a Corthography Press run. Use when checking on a run started via /press-query, /press-render, or /press-publish.
+name: corthography-press-status
+description: Show the current status of a Corthography Press run. Use when checking on a run started via /corthography-press-query, /corthography-press-render, or /corthography-press-publish.
 ---
 
-# /press-status — Show run status
+# /corthography-press-status — Show run status
 
 ## Arguments
 
@@ -24,7 +24,7 @@ Output includes: workflow, target, environment, status, current_phase, started_a
 
 - `queued` — accepted by the API, not yet running
 - `running` — Step Functions execution in progress
-- `awaiting_approval` — paused at the prod release gate (call `/press-approve`)
+- `awaiting_approval` — paused at the prod release gate (call `/corthography-press-approve`)
 - `succeeded` — terminal success
-- `failed` — terminal failure (check `error` and `/press-logs`)
+- `failed` — terminal failure (check `error` and `/corthography-press-logs`)
 - `cancelled` — manually stopped

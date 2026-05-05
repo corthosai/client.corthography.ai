@@ -1,9 +1,9 @@
 ---
-name: press-list-projects
-description: List the Corthography Press projects the partner is authorized to target. Use to discover what projects can be passed to /press-query, /press-render, /press-publish.
+name: corthography-press-list-projects
+description: List the Corthography Press projects the partner is authorized to target. Use to discover what projects can be passed to /corthography-press-query, /corthography-press-render, /corthography-press-publish.
 ---
 
-# /press-list-projects
+# /corthography-press-list-projects
 
 ## Procedure
 

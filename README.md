@@ -6,7 +6,7 @@ This is the **partner-facing** surface of the multi-tenant Press service (SPEC-0
 
 ```
 [ Partner engineer ]
-    ↓ /press-render dms/.../colleges/overview+computer-science-degree
+    ↓ /corthography-press-render dms/.../colleges/overview+computer-science-degree
 [ Claude plugin (this repo) ]
     ↓ corthography render ...
 [ @corthography/cli ]
@@ -26,7 +26,7 @@ The SDK and CLI are public; the API and engine are private. Security is enforced
 |---|---|---|
 | [`@corthography/sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
 | [`@corthography/cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
-| Claude plugin | Slash commands (`/press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
+| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
 
 All three are versioned together.
 
@@ -34,11 +34,23 @@ All three are versioned together.
 
 ### Claude plugin (recommended for partners)
 
-In a Claude Code session:
+In a Claude Code session, add this repo as a marketplace and install the plugin:
 
 ```
-/plugin install corthosai/client.corthography.ai
+/plugin marketplace add corthosai/client.corthography.ai
+/plugin install corthography-press-client@corthography-client
 ```
+
+The legacy direct install (`/plugin install corthosai/client.corthography.ai`) also still works.
+
+#### Other agentic harnesses
+
+The same `skills/` tree is exposed to other harnesses via parallel manifests, so the slash commands are available regardless of which agent the partner uses:
+
+- **Codex** — `.codex-plugin/plugin.json`
+- **Cursor** — `.cursor-plugin/plugin.json`
+
+Each harness's manifest points at `./skills/`, so there is one source of truth for the `corthography-press-*` skill content.
 
 Then add your token to your shell:
 
@@ -80,14 +92,14 @@ console.log(run.runId);
 
 | Command | What it does |
 |---|---|
-| `/press-query {target}` | Stage 1: collect Corthodex API data into S3 chunks |
-| `/press-render {target}` | Stage 2: render Markdown from staged data |
-| `/press-publish {target}` | Stage 3: distribute rendered content to destination (test); use `--env prod` for production (requires approval) |
-| `/press-status {run_id}` | Check run status |
-| `/press-logs {run_id}` | Get the CloudWatch log group for a run |
-| `/press-approve {run_id}` | Approve a run paused at the prod release gate |
-| `/press-list-projects` | Show projects you're authorized for |
-| `/press-list-templates` | Show templates you're authorized for |
+| `/corthography-press-query {target}` | Stage 1: collect Corthodex API data into S3 chunks |
+| `/corthography-press-render {target}` | Stage 2: render Markdown from staged data |
+| `/corthography-press-publish {target}` | Stage 3: distribute rendered content to destination (test); use `--env prod` for production (requires approval) |
+| `/corthography-press-status {run_id}` | Check run status |
+| `/corthography-press-logs {run_id}` | Get the CloudWatch log group for a run |
+| `/corthography-press-approve {run_id}` | Approve a run paused at the prod release gate |
+| `/corthography-press-list-projects` | Show projects you're authorized for |
+| `/corthography-press-list-templates` | Show templates you're authorized for |
 
 `{target}` is the canonical `{owner}/{collection}/{type}/{name}+{project_slug}` string, e.g., `dms/education-niche/colleges/overview+computer-science-degree`.
 
