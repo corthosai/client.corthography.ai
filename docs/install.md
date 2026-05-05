@@ -22,10 +22,10 @@ Restart Claude Code. Slash commands `/corthography-press-query`, `/corthography-
 
 ## 2. CLI binary
 
-Once `@corthography/cli` is published to npm (phase 7):
+Once `@corthos/corthography-cli` is published to npm (phase 7):
 
 ```bash
-npm install -g @corthography/cli
+npm install -g @corthos/corthography-cli
 ```
 
 For now (during the bootstrap phase), build from source:
@@ -41,11 +41,11 @@ node cli/dist/bin.js --help
 ## 3. SDK (programmatic)
 
 ```bash
-npm install @corthography/sdk
+npm install @corthos/corthography-sdk
 ```
 
 ```ts
-import { PressClient } from "@corthography/sdk";
+import { PressClient } from "@corthos/corthography-sdk";
 
 const client = new PressClient({
   token: process.env.CORTHOGRAPHY_TOKEN!,

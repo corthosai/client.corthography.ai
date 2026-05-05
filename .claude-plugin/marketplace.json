@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "corthography-press-client",
-      "description": "Corthography Press partner client — slash commands wrapping the @corthography/cli binary.",
+      "description": "Corthography Press partner client — slash commands wrapping the @corthos/corthography-cli binary.",
       "version": "0.1.0",
       "source": "./",
       "author": {

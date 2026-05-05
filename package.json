@@ -9,7 +9,7 @@
     "cli"
   ],
   "scripts": {
-    "build": "npm run build -w @corthography/sdk && npm run build -w @corthography/cli",
+    "build": "npm run build -w @corthos/corthography-sdk && npm run build -w @corthos/corthography-cli",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "clean": "rm -rf packages/*/dist packages/*/*.tsbuildinfo"
