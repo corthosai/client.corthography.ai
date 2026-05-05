@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "Corthography Press command-line interface",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/corthosai/client.corthography.ai.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/corthosai/client.corthography.ai#readme",
+  "bugs": "https://github.com/corthosai/client.corthography.ai/issues",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
