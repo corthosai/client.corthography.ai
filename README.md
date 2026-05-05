@@ -103,16 +103,34 @@ console.log(run.runId);
 
 `{target}` is the canonical `{owner}/{collection}/{type}/{name}+{project_slug}` string, e.g., `dms/education-niche/colleges/overview+computer-science-degree`.
 
-## Token and base URL
+## Token, base URL, and owner
 
-Both can be set via env var or `~/.corthography/credentials` (TOML-ish key=value). Env vars take precedence:
+These can come from any of the following, listed high → low precedence:
+
+1. CLI flags `--token` / `--api`
+2. Env vars `CORTHOGRAPHY_TOKEN`, `CORTHOGRAPHY_API`, `CORTHOGRAPHY_OWNER`
+3. `.fractary/env/.env.<env>` in the partner repo (walked up from cwd; `<env>` follows the subcommand's `--env` flag, defaults to `test`)
+4. `~/.corthography/credentials` (TOML-ish key=value)
 
 ```bash
-CORTHOGRAPHY_TOKEN=...                     # required
-CORTHOGRAPHY_API=https://api.corthography.ai/v1   # optional, defaults to this
+CORTHOGRAPHY_TOKEN=...                              # required
+CORTHOGRAPHY_API=https://api.corthography.ai/v1     # optional, defaults to this
+CORTHOGRAPHY_OWNER=dms                              # optional, see "Owner inference" below
 ```
 
-CLI flags `--token` and `--api` override both.
+The fractary file lookup pairs `--env test` with `.fractary/env/.env.test` and `--env prod` with `.fractary/env/.env.prod`, so partners can keep credentials env-aware alongside the rest of their Fractary configuration.
+
+### Owner inference
+
+The canonical target is `{owner}/{collection}/{type}/{name}+{project_slug}`. From inside a partner repo the owner is implicit, so the CLI accepts a 3-segment shorthand:
+
+```bash
+# With CORTHOGRAPHY_OWNER=dms set, both of these are equivalent:
+corthography query education-niche/colleges/overview+computer-science-degree
+corthography query dms/education-niche/colleges/overview+computer-science-degree
+```
+
+A 3-segment target without an owner configured fails with a clear error. 4-segment targets always pass through unchanged.
 
 ## Development
 

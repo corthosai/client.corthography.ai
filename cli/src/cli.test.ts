@@ -14,7 +14,13 @@ describe("runCli", () => {
     const out: string[] = [];
     const code = await runCli(
       ["node", "corthography", "query", "dms/c/t/n+slug", "--env", "test"],
-      { env: TEST_ENV, makeClient: () => client as never, out: (s) => out.push(s), credentialsPath: "/non-existent" },
+      {
+        env: TEST_ENV,
+        makeClient: () => client as never,
+        out: (s) => out.push(s),
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+      },
     );
     expect(code).toBe(0);
     expect(startRun).toHaveBeenCalledWith({
@@ -32,7 +38,13 @@ describe("runCli", () => {
     const out: string[] = [];
     const code = await runCli(
       ["node", "corthography", "--json", "render", "dms/c/t/n+slug"],
-      { env: TEST_ENV, makeClient: () => client as never, out: (s) => out.push(s), credentialsPath: "/non-existent" },
+      {
+        env: TEST_ENV,
+        makeClient: () => client as never,
+        out: (s) => out.push(s),
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+      },
     );
     expect(code).toBe(0);
     const parsed = JSON.parse(out.join(""));
@@ -56,6 +68,7 @@ describe("runCli", () => {
       makeClient: () => client as never,
       out: (s) => out.push(s),
       credentialsPath: "/non-existent",
+      fractaryRoot: "",
     });
     expect(code).toBe(0);
     expect(getRun).toHaveBeenCalledWith("r-3");
@@ -71,6 +84,7 @@ describe("runCli", () => {
       makeClient: () => client as never,
       out: (s) => out.push(s),
       credentialsPath: "/non-existent",
+      fractaryRoot: "",
     });
     expect(code).toBe(0);
     expect(approveRun).toHaveBeenCalledWith("r-4", { decision: "reject", reason: "no go" });
@@ -82,12 +96,53 @@ describe("runCli", () => {
     const code = await runCli(["node", "corthography", "render", "dms/c/t/n+slug"], {
       env: {},
       credentialsPath: "/non-existent",
+      fractaryRoot: "",
       makeClient: () => ({ startRun: vi.fn() }) as never,
       out: (s) => out.push(s),
       err: (s) => errOut.push(s),
     });
     expect(code).toBe(1);
     expect(errOut.join("\n")).toMatch(/CORTHOGRAPHY_TOKEN/);
+  });
+
+  it("query prepends CORTHOGRAPHY_OWNER to a 3-segment target", async () => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-5", status: "queued" });
+    const client = makeStubClient({ startRun });
+    const out: string[] = [];
+    const code = await runCli(
+      ["node", "corthography", "query", "education-niche/colleges/overview+computer-science-degree"],
+      {
+        env: { ...TEST_ENV, CORTHOGRAPHY_OWNER: "dms" },
+        makeClient: () => client as never,
+        out: (s) => out.push(s),
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+      },
+    );
+    expect(code).toBe(0);
+    expect(startRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: "dms/education-niche/colleges/overview+computer-science-degree",
+      }),
+    );
+  });
+
+  it("3-segment target without an owner exits non-zero", async () => {
+    const out: string[] = [];
+    const errOut: string[] = [];
+    const code = await runCli(
+      ["node", "corthography", "query", "education-niche/colleges/overview+slug"],
+      {
+        env: TEST_ENV,
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+        makeClient: () => ({ startRun: vi.fn() }) as never,
+        out: (s) => out.push(s),
+        err: (s) => errOut.push(s),
+      },
+    );
+    expect(code).toBe(1);
+    expect(errOut.join("\n")).toMatch(/owner segment/);
   });
 
   it("projects calls listProjects and prints template_key lines", async () => {
@@ -101,6 +156,7 @@ describe("runCli", () => {
       makeClient: () => client as never,
       out: (s) => out.push(s),
       credentialsPath: "/non-existent",
+      fractaryRoot: "",
     });
     expect(code).toBe(0);
     expect(out.join("\n")).toContain("dms/c/t/n");

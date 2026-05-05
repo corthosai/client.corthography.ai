@@ -6,6 +6,7 @@
 import { Command } from "commander";
 import { PressClient } from "@corthos/corthography-sdk";
 import { resolveConfig } from "./config.js";
+import { resolveTarget } from "./target.js";
 import { formatJson, formatRunHumanReadable } from "./format.js";
 
 export interface CliDeps {
@@ -18,6 +19,10 @@ export interface CliDeps {
   env?: NodeJS.ProcessEnv;
   /** Override credentials path (tests). */
   credentialsPath?: string;
+  /** Override fractary project root (tests). Empty string disables the lookup. */
+  fractaryRoot?: string;
+  /** Override cwd used for fractary root discovery (tests). */
+  cwd?: string;
 }
 
 export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promise<number> {
@@ -34,15 +39,18 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--json", "Output JSON instead of human-readable text")
     .exitOverride();
 
-  const buildClient = (): PressClient => {
+  const buildContext = (cliEnv?: string): { client: PressClient; owner?: string } => {
     const opts = program.opts<{ token?: string; api?: string }>();
     const cfg = resolveConfig({
       cliToken: opts.token,
       cliApi: opts.api,
+      cliEnv,
       env: deps.env,
       credentialsPath: deps.credentialsPath,
+      fractaryRoot: deps.fractaryRoot,
+      cwd: deps.cwd,
     });
-    return makeClient(cfg.token, cfg.apiUrl);
+    return { client: makeClient(cfg.token, cfg.apiUrl), owner: cfg.owner };
   };
 
   const isJson = (): boolean => Boolean(program.opts<{ json?: boolean }>().json);
@@ -53,10 +61,10 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--env <env>", "test or prod", "test")
     .option("--ref <ref>", "Pin a partner-repo git ref (branch/tag/SHA)")
     .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const client = buildClient();
-      const r = await client.startRun({
+      const ctx = buildContext(opts.env);
+      const r = await ctx.client.startRun({
         workflow: "template-query",
-        target,
+        target: resolveTarget(target, { owner: ctx.owner }),
         environment: opts.env as "test" | "prod",
         templateRef: opts.ref,
       });
@@ -69,10 +77,10 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--env <env>", "test or prod", "test")
     .option("--ref <ref>", "Pin a partner-repo git ref")
     .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const client = buildClient();
-      const r = await client.startRun({
+      const ctx = buildContext(opts.env);
+      const r = await ctx.client.startRun({
         workflow: "template-render",
-        target,
+        target: resolveTarget(target, { owner: ctx.owner }),
         environment: opts.env as "test" | "prod",
         templateRef: opts.ref,
       });
@@ -85,10 +93,10 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--env <env>", "test or prod", "test")
     .option("--ref <ref>", "Pin a partner-repo git ref")
     .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const client = buildClient();
-      const r = await client.startRun({
+      const ctx = buildContext(opts.env);
+      const r = await ctx.client.startRun({
         workflow: "template-publish",
-        target,
+        target: resolveTarget(target, { owner: ctx.owner }),
         environment: opts.env as "test" | "prod",
         templateRef: opts.ref,
       });
@@ -99,7 +107,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .command("status <run_id>")
     .description("Show the current status of a run")
     .action(async (runId: string) => {
-      const client = buildClient();
+      const { client } = buildContext();
       const run = await client.getRun(runId);
       out(isJson() ? formatJson(run) : formatRunHumanReadable(run));
     });
@@ -110,7 +118,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--limit <n>", "How many to return", "20")
     .option("--status <status>", "Filter by status (queued, running, succeeded, failed, ...)")
     .action(async (opts: { limit: string; status?: string }) => {
-      const client = buildClient();
+      const { client } = buildContext();
       const runs = await client.listRuns({ limit: Number(opts.limit), status: opts.status });
       out(isJson() ? formatJson(runs) : runs.map(formatRunHumanReadable).join("\n---\n"));
     });
@@ -119,7 +127,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .command("logs <run_id>")
     .description("Show the CloudWatch log group for a run")
     .action(async (runId: string) => {
-      const client = buildClient();
+      const { client } = buildContext();
       const r = await client.getRunLogs(runId);
       out(isJson() ? formatJson(r) : `log_group: ${r.logGroup}`);
     });
@@ -130,7 +138,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .option("--reject", "Reject instead of approve")
     .option("--reason <reason>", "Reason for the decision")
     .action(async (runId: string, opts: { reject?: boolean; reason?: string }) => {
-      const client = buildClient();
+      const { client } = buildContext();
       const r = await client.approveRun(runId, {
         decision: opts.reject ? "reject" : "approve",
         reason: opts.reason,
@@ -142,7 +150,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .command("projects")
     .description("List projects you're authorized to target")
     .action(async () => {
-      const client = buildClient();
+      const { client } = buildContext();
       const projects = await client.listProjects();
       out(
         isJson()
@@ -157,7 +165,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     .command("templates")
     .description("List templates you're authorized to target")
     .action(async () => {
-      const client = buildClient();
+      const { client } = buildContext();
       const templates = await client.listTemplates();
       out(isJson() ? formatJson(templates) : templates.map((t) => t.templateKey).join("\n"));
     });
