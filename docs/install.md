@@ -18,7 +18,7 @@ export CORTHOGRAPHY_TOKEN=...
 export CORTHOGRAPHY_API=https://api.corthography.ai/v1
 ```
 
-Restart Claude Code. Slash commands `/press-query`, `/press-render`, etc. become available.
+Restart Claude Code. Slash commands `/corthography-press-query`, `/corthography-press-render`, etc. become available.
 
 ## 2. CLI binary
 
@@ -35,17 +35,17 @@ git clone https://github.com/corthosai/client.corthography.ai.git
 cd client.corthography.ai
 npm install
 npm run build
-node packages/cli/dist/bin.js --help
+node cli/dist/bin.js --help
 ```
 
 ## 3. SDK (programmatic)
 
 ```bash
-npm install @corthography/client
+npm install @corthography/sdk
 ```
 
 ```ts
-import { PressClient } from "@corthography/client";
+import { PressClient } from "@corthography/sdk";
 
 const client = new PressClient({
   token: process.env.CORTHOGRAPHY_TOKEN!,
