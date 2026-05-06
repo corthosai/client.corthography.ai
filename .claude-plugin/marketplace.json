@@ -9,7 +9,7 @@
         {
             "name": "corthos-corthography",
             "description": "Corthography partner client — slash commands wrapping the @corthos/corthography-cli binary.",
-            "version": "0.1.3",
+            "version": "0.1.4",
             "source": "./",
             "author": {
                 "name": "Corthos",

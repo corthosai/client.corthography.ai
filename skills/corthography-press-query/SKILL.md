@@ -13,6 +13,9 @@ description: Stage 1 of the Corthography Press pipeline — fetch Corthodex data
 | `--env <test\|prod>` | No | Environment (default: test) |
 | `--ref <branch\|tag\|sha>` | No | Pin a specific git ref of the partner template repo |
 | `--json` | No | Output JSON instead of human-readable text |
+| `--wait` | No | Block until the run reaches a terminal state, then print final status |
+| `--wait-timeout <seconds>` | No | Max wait time when `--wait` is set (default: 600) |
+| `--poll-interval <seconds>` | No | Fixed poll cadence (default: adaptive 5s for 30s, then 15s) |
 
 ## Procedure
 
@@ -23,6 +26,17 @@ corthography query <target> [--env test|prod] [--ref <ref>] [--json]
 ```
 
 Print the returned `run_id` and stop. The partner can poll status via `/corthography-press-status {run_id}`. If the CLI exits non-zero, surface its error message verbatim — don't guess.
+
+### Polling option
+
+Pass `--wait` to block on a single bash call until the run is terminal — saves agent context tokens versus loop-polling `/corthography-press-status`. The CLI prints the final status block once and exits with:
+
+- `0` — succeeded
+- `1` — failed or cancelled (or any preexisting CLI/network error)
+- `2` — paused at the prod release gate (`awaiting_approval` — call `/corthography-press-approve`)
+- `3` — `--wait-timeout` reached (run still running; re-invoke `/corthography-press-status {run_id} --wait` to keep waiting)
+
+`--wait-timeout <seconds>` (default 600 — matches Claude Code's 10-minute Bash ceiling) and `--poll-interval <seconds>` (default adaptive: 5s for the first 30s, then 15s) tune the loop.
 
 Credential resolution (handled inside the CLI, listed for reference only): `--token` flag → `CORTHOGRAPHY_TOKEN` env var → `.fractary/env/.env.<env>` (walked up from cwd, picked to match `--env`) → `~/.corthography/credentials`.
 

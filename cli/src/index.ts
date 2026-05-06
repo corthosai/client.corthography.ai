@@ -11,6 +11,30 @@ import { PressClient } from "@corthos/corthography-sdk";
 import { resolveConfig } from "./config.js";
 import { resolveTarget } from "./target.js";
 import { formatJson, formatRunHumanReadable } from "./format.js";
+import { pollUntilDone, type PollReason } from "./poll.js";
+
+interface WaitOpts {
+  wait?: boolean;
+  waitTimeout?: string;
+  pollInterval?: string;
+}
+
+function parsePositiveSeconds(raw: string | undefined, flag: string): number | undefined {
+  if (raw === undefined) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`${flag} must be a positive number of seconds (got ${raw})`);
+  }
+  return n * 1000;
+}
+
+function exitCodeForReason(reason: PollReason, status: string): number {
+  if (reason === "timeout") return 3;
+  if (reason === "paused") return 2;
+  // terminal
+  if (status === "succeeded") return 0;
+  return 1; // failed | cancelled
+}
 
 function readCliVersion(): string {
   try {
@@ -69,59 +93,84 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
 
   const isJson = (): boolean => Boolean(program.opts<{ json?: boolean }>().json);
 
-  program
-    .command("query <target>")
-    .description("Stage 1: collect Corthodex API data into S3 chunks")
-    .option("--env <env>", "test or prod", "test")
-    .option("--ref <ref>", "Pin a partner-repo git ref (branch/tag/SHA)")
-    .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const ctx = buildContext(opts.env);
-      const r = await ctx.client.startRun({
-        workflow: "template-query",
-        target: resolveTarget(target, { owner: ctx.owner }),
-        environment: opts.env as "test" | "prod",
-        templateRef: opts.ref,
-      });
-      out(isJson() ? formatJson(r) : `started query: run_id=${r.runId}`);
-    });
+  let pendingExitCode = 0;
 
-  program
-    .command("render <target>")
-    .description("Stage 2: render Markdown content from staged data")
-    .option("--env <env>", "test or prod", "test")
-    .option("--ref <ref>", "Pin a partner-repo git ref")
-    .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const ctx = buildContext(opts.env);
-      const r = await ctx.client.startRun({
-        workflow: "template-render",
-        target: resolveTarget(target, { owner: ctx.owner }),
-        environment: opts.env as "test" | "prod",
-        templateRef: opts.ref,
-      });
-      out(isJson() ? formatJson(r) : `started render: run_id=${r.runId}`);
-    });
+  const runWaitFlow = async (
+    client: PressClient,
+    runId: string,
+    waitOpts: WaitOpts,
+  ): Promise<void> => {
+    const timeoutMs = parsePositiveSeconds(waitOpts.waitTimeout, "--wait-timeout") ?? 600_000;
+    const pollIntervalMs = parsePositiveSeconds(waitOpts.pollInterval, "--poll-interval");
+    const { run, reason } = await pollUntilDone(client, runId, { timeoutMs, pollIntervalMs });
+    if (isJson()) {
+      out(formatJson(run));
+    } else {
+      out(formatRunHumanReadable(run));
+      if (reason === "paused") {
+        out(`paused: awaiting approval — release with \`corthography approve ${run.runId}\``);
+      } else if (reason === "timeout") {
+        out(
+          `still running, last status: ${run.status} — re-run with \`corthography status ${run.runId} --wait\` to keep waiting`,
+        );
+      }
+    }
+    pendingExitCode = exitCodeForReason(reason, run.status);
+  };
 
-  program
-    .command("publish <target>")
-    .description("Stage 3: distribute rendered content to destination (test); --env prod requires approval")
-    .option("--env <env>", "test or prod", "test")
-    .option("--ref <ref>", "Pin a partner-repo git ref")
-    .action(async (target: string, opts: { env: string; ref?: string }) => {
-      const ctx = buildContext(opts.env);
-      const r = await ctx.client.startRun({
-        workflow: "template-publish",
-        target: resolveTarget(target, { owner: ctx.owner }),
-        environment: opts.env as "test" | "prod",
-        templateRef: opts.ref,
-      });
-      out(isJson() ? formatJson(r) : `started publish: run_id=${r.runId}`);
-    });
+  const startCommand = (
+    name: "query" | "render" | "publish",
+    workflow: "template-query" | "template-render" | "template-publish",
+    description: string,
+  ): Command =>
+    program
+      .command(`${name} <target>`)
+      .description(description)
+      .option("--env <env>", "test or prod", "test")
+      .option("--ref <ref>", "Pin a partner-repo git ref (branch/tag/SHA)")
+      .option("--wait", "Block until the run reaches a terminal state")
+      .option("--wait-timeout <seconds>", "Max wait time when --wait is set (default: 600)")
+      .option("--poll-interval <seconds>", "Fixed poll cadence (default: adaptive 5s/15s)")
+      .action(
+        async (
+          target: string,
+          opts: { env: string; ref?: string } & WaitOpts,
+        ) => {
+          const ctx = buildContext(opts.env);
+          const r = await ctx.client.startRun({
+            workflow,
+            target: resolveTarget(target, { owner: ctx.owner }),
+            environment: opts.env as "test" | "prod",
+            templateRef: opts.ref,
+          });
+          if (opts.wait) {
+            await runWaitFlow(ctx.client, r.runId, opts);
+            return;
+          }
+          out(isJson() ? formatJson(r) : `started ${name}: run_id=${r.runId}`);
+        },
+      );
+
+  startCommand("query", "template-query", "Stage 1: collect Corthodex API data into S3 chunks");
+  startCommand("render", "template-render", "Stage 2: render Markdown content from staged data");
+  startCommand(
+    "publish",
+    "template-publish",
+    "Stage 3: distribute rendered content to destination (test); --env prod requires approval",
+  );
 
   program
     .command("status <run_id>")
     .description("Show the current status of a run")
-    .action(async (runId: string) => {
+    .option("--wait", "Block until the run reaches a terminal state")
+    .option("--wait-timeout <seconds>", "Max wait time when --wait is set (default: 600)")
+    .option("--poll-interval <seconds>", "Fixed poll cadence (default: adaptive 5s/15s)")
+    .action(async (runId: string, opts: WaitOpts) => {
       const { client } = buildContext();
+      if (opts.wait) {
+        await runWaitFlow(client, runId, opts);
+        return;
+      }
       const run = await client.getRun(runId);
       out(isJson() ? formatJson(run) : formatRunHumanReadable(run));
     });
@@ -186,7 +235,7 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
 
   try {
     await program.parseAsync(argv);
-    return 0;
+    return pendingExitCode;
   } catch (e) {
     const code = typeof e === "object" && e !== null && "code" in e ? (e as { code?: string }).code : undefined;
     if (typeof code === "string" && code.startsWith("commander.")) {
