@@ -145,6 +145,88 @@ describe("runCli", () => {
     expect(errOut.join("\n")).toMatch(/owner segment/);
   });
 
+  it("query --wait blocks until terminal and exits 0 on success", async () => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-w1", status: "queued" });
+    const summary = (status: string) => ({
+      runId: "r-w1",
+      partnerId: "dms",
+      workflow: "template-query",
+      target: "dms/c/t/n+s",
+      environment: "test",
+      status,
+      startedAt: "2026-05-05T00:00:00Z",
+    });
+    let i = 0;
+    const seq = ["running", "succeeded"];
+    const getRun = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(summary(seq[Math.min(i++, seq.length - 1)])));
+    const client = makeStubClient({ startRun, getRun });
+    const out: string[] = [];
+    const code = await runCli(
+      [
+        "node",
+        "corthography",
+        "query",
+        "dms/c/t/n+slug",
+        "--wait",
+        "--poll-interval",
+        "0.001",
+        "--wait-timeout",
+        "5",
+      ],
+      {
+        env: TEST_ENV,
+        makeClient: () => client as never,
+        out: (s) => out.push(s),
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+      },
+    );
+    expect(code).toBe(0);
+    expect(getRun.mock.calls.length).toBeGreaterThanOrEqual(2);
+    const joined = out.join("\n");
+    expect(joined).toContain("status:       succeeded");
+    expect(joined).toContain("run_id:       r-w1");
+  });
+
+  it("status --wait exits 3 when wait-timeout elapses", async () => {
+    const summary = {
+      runId: "r-w2",
+      partnerId: "dms",
+      workflow: "template-render",
+      target: "dms/c/t/n+s",
+      environment: "test",
+      status: "running",
+      startedAt: "2026-05-05T00:00:00Z",
+    };
+    const getRun = vi.fn().mockResolvedValue(summary);
+    const client = makeStubClient({ getRun });
+    const out: string[] = [];
+    const code = await runCli(
+      [
+        "node",
+        "corthography",
+        "status",
+        "r-w2",
+        "--wait",
+        "--poll-interval",
+        "0.005",
+        "--wait-timeout",
+        "0.02",
+      ],
+      {
+        env: TEST_ENV,
+        makeClient: () => client as never,
+        out: (s) => out.push(s),
+        credentialsPath: "/non-existent",
+        fractaryRoot: "",
+      },
+    );
+    expect(code).toBe(3);
+    expect(out.join("\n")).toContain("still running");
+  });
+
   it("projects calls listProjects and prints template_key lines", async () => {
     const listProjects = vi.fn().mockResolvedValue([
       { templateKey: "dms/c/t/n", projectSlugs: ["a", "b"] },

@@ -13,6 +13,9 @@ description: Stage 3 of the Corthography Press pipeline — distribute rendered 
 | `--env <test\|prod>` | No | Environment (default: test) |
 | `--ref <branch\|tag\|sha>` | No | Pin a specific git ref |
 | `--json` | No | JSON output |
+| `--wait` | No | Block until the run reaches a terminal state, then print final status |
+| `--wait-timeout <seconds>` | No | Max wait time when `--wait` is set (default: 600) |
+| `--poll-interval <seconds>` | No | Fixed poll cadence (default: adaptive 5s for 30s, then 15s) |
 
 ## Procedure
 
@@ -25,6 +28,17 @@ description: Stage 3 of the Corthography Press pipeline — distribute rendered 
    ```
 
 3. Print the returned `run_id`.
+
+### Polling option
+
+Pass `--wait` to block on a single bash call until terminal. For `--env prod` the run will pause at the release gate — `--wait` exits with code `2` (paused) so the agent can route to `/corthography-press-approve`. Exit codes:
+
+- `0` — succeeded (`--env test` finished, or prod was approved and completed)
+- `1` — failed or cancelled (or any preexisting CLI/network error)
+- `2` — paused at the prod release gate (`awaiting_approval`)
+- `3` — `--wait-timeout` reached (re-invoke `/corthography-press-status {run_id} --wait` to keep waiting)
+
+`--wait-timeout <seconds>` (default 600) and `--poll-interval <seconds>` (default adaptive 5s/15s) tune the loop.
 
 ## Notes
 

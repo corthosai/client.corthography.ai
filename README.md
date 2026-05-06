@@ -92,16 +92,35 @@ console.log(run.runId);
 
 | Command | What it does |
 |---|---|
-| `/corthography-press-query {target}` | Stage 1: collect Corthodex API data into S3 chunks |
-| `/corthography-press-render {target}` | Stage 2: render Markdown from staged data |
-| `/corthography-press-publish {target}` | Stage 3: distribute rendered content to destination (test); use `--env prod` for production (requires approval) |
-| `/corthography-press-status {run_id}` | Check run status |
+| `/corthography-press-query {target}` | Stage 1: collect Corthodex API data into S3 chunks (supports `--wait`) |
+| `/corthography-press-render {target}` | Stage 2: render Markdown from staged data (supports `--wait`) |
+| `/corthography-press-publish {target}` | Stage 3: distribute rendered content to destination (test); use `--env prod` for production (requires approval); supports `--wait` |
+| `/corthography-press-status {run_id}` | Check run status; pass `--wait` to block until terminal |
 | `/corthography-press-logs {run_id}` | Get the CloudWatch log group for a run |
 | `/corthography-press-approve {run_id}` | Approve a run paused at the prod release gate |
 | `/corthography-press-list-projects` | Show projects you're authorized for |
 | `/corthography-press-list-templates` | Show templates you're authorized for |
 
 `{target}` is the canonical `{owner}/{collection}/{type}/{name}+{project_slug}` string, e.g., `dms/education-niche/colleges/overview+computer-science-degree`.
+
+### Polling (`--wait`)
+
+`query`, `render`, `publish`, and `status` all accept `--wait` to block the bash invocation until the run reaches a terminal state. This collapses an agent-side poll loop into a single input/output pair — the agent sees one Bash call regardless of how long the run takes, which is much cheaper in context tokens.
+
+```bash
+corthography query <target> --wait                    # default 10-minute budget
+corthography render <target> --wait --wait-timeout 3600   # longer terminal use
+corthography status <run_id> --wait                   # block on an existing run
+```
+
+Exit codes when `--wait` is set:
+
+- `0` — `succeeded`
+- `1` — `failed` or `cancelled` (or any preexisting CLI/network error)
+- `2` — `awaiting_approval` (paused at the prod release gate — call `/corthography-press-approve`)
+- `3` — `--wait-timeout` reached (run still in progress; re-invoke `status --wait` to keep waiting)
+
+Polling cadence defaults to 5s for the first 30s and 15s thereafter; override with `--poll-interval <seconds>`. The default `--wait-timeout` is 600s (matches Claude Code's 10-minute Bash ceiling).
 
 ## Token, base URL, and owner
 
