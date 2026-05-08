@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "template-publish",
+  "description": "Stage 3 of the Corthography Press pipeline for partners — distribute already-rendered content to the configured destination. Two phases: evaluate publishes to test (autonomous); release publishes to prod and requires explicit approval at the FABER phase boundary. The release phase invokes the CLI with --env prod, which will pause at the API's own release gate (awaiting_approval); partners with auto_approve_prod=false must coordinate with their press-core liaison to complete the run after the FABER gate is approved.",
+  "asset_type": "content",
+  "phases": {
+    "frame": { "enabled": false },
+    "architect": { "enabled": false },
+    "build": { "enabled": false },
+    "evaluate": {
+      "enabled": true,
+      "description": "Publish rendered content for {asset} to the test destination and wait for it to complete.",
+      "steps": [
+        {
+          "id": "evaluate-press-publish-test",
+          "name": "Publish to test",
+          "description": "Invoke the partner CLI to publish rendered content for {asset} to the test destination, blocking until terminal. Use this output to validate the test destination before approving the prod release phase.",
+          "prompt": "Use the corthography-press-publish skill to start a template-publish run for target {asset} with --env test --wait. After the run completes, report the run_id and final status, and summarize what was published (file count from status output if available). Suggest the partner inspect the test destination before approving the release phase."
+        }
+      ]
+    },
+    "release": {
+      "enabled": true,
+      "require_approval": true,
+      "description": "After human approval, publish {asset} to the prod destination. The CLI will trigger the API's release gate; the run sits at awaiting_approval until corthography approve is called.",
+      "steps": [
+        {
+          "id": "release-press-publish-prod",
+          "name": "Publish to prod",
+          "description": "Invoke the partner CLI to publish rendered content for {asset} to the prod destination. Pass --wait so the CLI returns once the run reaches a terminal state OR exits with code 2 when the API pauses at the release gate. Report the run_id and exit code; if exit code 2, instruct the partner to run /corthography-press-approve {run_id} (or coordinate with press-core if auto_approve_prod is false on their registry).",
+          "prompt": "Use the corthography-press-publish skill to start a template-publish run for target {asset} with --env prod --wait. After the CLI exits, report: (1) run_id, (2) exit code, (3) final status. Exit code 2 means the run is paused at the API's release gate — do NOT retry; instead instruct the partner to run /corthography-press-approve {run_id}, noting that auto_approve_prod=false on the partner registry means a press-core engineer must approve."
+        }
+      ]
+    }
+  },
+  "autonomy": {
+    "level": "guarded",
+    "description": "Test publishes run autonomously. Production publishes pause at the FABER release boundary and again at the API's own release gate (server-enforced).",
+    "pause_before_release": true,
+    "require_approval_for": []
+  }
+}

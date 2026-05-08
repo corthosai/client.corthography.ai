@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "template-render",
+  "description": "Stage 2 of the Corthography Press pipeline for partners — start a template-render run via the corthography CLI against previously-staged data, blocking until terminal. Wraps the corthography-press-render skill. Re-run as many times as needed while iterating on the template; data must already be staged by a prior template-query run for the same target+env.",
+  "asset_type": "content",
+  "phases": {
+    "frame": { "enabled": false },
+    "architect": { "enabled": false },
+    "build": { "enabled": false },
+    "evaluate": {
+      "enabled": true,
+      "description": "Start a template-render run for {asset} in the test environment and wait for it to reach a terminal state.",
+      "steps": [
+        {
+          "id": "evaluate-press-render",
+          "name": "Run template-render (test)",
+          "description": "Invoke the partner CLI to start a template-render run for {asset} against the test environment, blocking until the run is terminal. Reads the most recent staged data from the test environment for this target.",
+          "prompt": "Use the corthography-press-render skill to start a template-render run for target {asset} with --env test --wait. After the run completes, report the run_id and final status. If the run fails because no staged data exists, surface that error and suggest the partner run template-query first."
+        }
+      ]
+    },
+    "release": { "enabled": false }
+  },
+  "autonomy": {
+    "level": "autonomous",
+    "description": "Fully autonomous — render runs do not require approval. Iterate freely; nothing in this workflow touches a publishing destination."
+  }
+}

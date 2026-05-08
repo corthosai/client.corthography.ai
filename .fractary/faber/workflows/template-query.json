@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "template-query",
+  "description": "Stage 1 of the Corthography Press pipeline for partners — start a template-query run via the corthography CLI and block until it reaches a terminal state. Wraps the corthography-press-query skill (which wraps the public CLI), so partners get the same authorization model as a direct CLI call. Run before template-render whenever fresh data is needed.",
+  "asset_type": "content",
+  "phases": {
+    "frame": { "enabled": false },
+    "architect": { "enabled": false },
+    "build": {
+      "enabled": true,
+      "description": "Start a template-query run for {asset} in the test environment and wait for it to reach a terminal state.",
+      "steps": [
+        {
+          "id": "build-press-query",
+          "name": "Run template-query (test)",
+          "description": "Invoke the partner CLI to start a template-query run for {asset} against the test environment, blocking until the run is terminal. Surfaces the run_id, final status, and any CLI error verbatim.",
+          "prompt": "Use the corthography-press-query skill to start a template-query run for target {asset} with --env test --wait. After the run completes, report the run_id and final status. If the CLI exits non-zero, surface its error message verbatim — do not retry."
+        }
+      ]
+    },
+    "evaluate": { "enabled": false },
+    "release": { "enabled": false }
+  },
+  "autonomy": {
+    "level": "autonomous",
+    "description": "Fully autonomous — query runs do not require approval. The wrapped CLI honors the partner's authorization scope; runs outside that scope fail fast at the API."
+  }
+}
