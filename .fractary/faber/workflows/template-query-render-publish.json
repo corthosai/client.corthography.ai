@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "template-query-render-publish",
+  "description": "End-to-end query → render → publish chain for partners with one human approval gate between the test cycle and the prod cycle. The evaluate phase runs all three stages against the test environment autonomously; FABER pauses before the release phase; after approval, all three stages run again against the prod environment. Re-querying for prod (rather than promoting test artifacts) ensures the prod run sees current upstream data — treat the test cycle as a structural sign-off, not a content lock-in. Each step wraps the corresponding corthography-press-* skill, so the run is governed by the same partner authorization scope as a direct CLI call.",
+  "asset_type": "content",
+  "phases": {
+    "frame": { "enabled": false },
+    "architect": { "enabled": false },
+    "build": { "enabled": false },
+    "evaluate": {
+      "enabled": true,
+      "description": "Test cycle (autonomous): query → render → publish, all against the test environment. After this completes, FABER pauses for human approval before the release phase.",
+      "steps": [
+        {
+          "id": "evaluate-press-query-test",
+          "name": "Query (test)",
+          "description": "Stage 1 of the test cycle: collect Corthodex API data for {asset} into the test data area.",
+          "prompt": "Use the corthography-press-query skill to start a template-query run for target {asset} with --env test --wait. Report the run_id and final status. If the run fails, stop the workflow — do not proceed to render."
+        },
+        {
+          "id": "evaluate-press-render-test",
+          "name": "Render (test)",
+          "description": "Stage 2 of the test cycle: render Markdown for {asset} from the just-staged test data.",
+          "prompt": "Use the corthography-press-render skill to start a template-render run for target {asset} with --env test --wait. Report the run_id and final status."
+        },
+        {
+          "id": "evaluate-press-publish-test",
+          "name": "Publish (test)",
+          "description": "Stage 3 of the test cycle: publish the rendered Markdown to the test destination.",
+          "prompt": "Use the corthography-press-publish skill to start a template-publish run for target {asset} with --env test --wait. Report the run_id and final status. After this completes, summarize all three test-cycle run_ids and instruct the partner to inspect the test destination before approving the release phase."
+        }
+      ]
+    },
+    "release": {
+      "enabled": true,
+      "require_approval": true,
+      "description": "Prod cycle (after human approval at the FABER gate): query → render → publish, all against the prod environment. Re-queries against prod rather than promoting test artifacts so the prod run reflects current upstream data.",
+      "steps": [
+        {
+          "id": "release-press-query-prod",
+          "name": "Query (prod)",
+          "description": "Stage 1 of the prod cycle: collect Corthodex API data for {asset} into the prod data area.",
+          "prompt": "Use the corthography-press-query skill to start a template-query run for target {asset} with --env prod --wait. Report the run_id and final status. If the run fails, stop the workflow — do not proceed to render."
+        },
+        {
+          "id": "release-press-render-prod",
+          "name": "Render (prod)",
+          "description": "Stage 2 of the prod cycle: render Markdown for {asset} from the just-staged prod data.",
+          "prompt": "Use the corthography-press-render skill to start a template-render run for target {asset} with --env prod --wait. Report the run_id and final status."
+        },
+        {
+          "id": "release-press-publish-prod",
+          "name": "Publish (prod)",
+          "description": "Stage 3 of the prod cycle: publish the rendered Markdown to the prod destination. The API will pause this run at its own release gate (server-enforced); the CLI exits with code 2 when paused.",
+          "prompt": "Use the corthography-press-publish skill to start a template-publish run for target {asset} with --env prod --wait. After the CLI exits, report: (1) run_id, (2) exit code, (3) final status. Exit code 2 means the run is paused at the API's release gate — do NOT retry; instruct the partner to run /corthography-press-approve {run_id}, noting that auto_approve_prod=false on the partner registry means a press-core engineer must approve. After approval (or if auto_approve_prod=true and the run completed), summarize all three prod-cycle run_ids."
+        }
+      ]
+    }
+  },
+  "autonomy": {
+    "level": "guarded",
+    "description": "Test cycle runs autonomously. Pauses before the prod cycle (release phase) for human approval. The publish-prod step also pauses at the API's own release gate (server-enforced) — this is by design and not bypassed by the FABER approval.",
+    "pause_before_release": true,
+    "require_approval_for": []
+  }
+}

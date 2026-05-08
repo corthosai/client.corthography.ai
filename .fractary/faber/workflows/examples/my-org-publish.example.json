@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "my-org-publish",
+  "description": "Example: a partner workflow that extends the client's template-query-render-publish and adds a Slack notification after the prod publish step. Copy this file into your own repo at .fractary/faber/workflows/, change the id, and customize the post_steps. See ../../../docs/client/extending-workflows.md.",
+  "asset_type": "content",
+  "extends": "corthos-corthography:template-query-render-publish",
+  "phases": {
+    "frame": { "enabled": false },
+    "architect": { "enabled": false },
+    "build": { "enabled": false },
+    "evaluate": { "enabled": true },
+    "release": {
+      "enabled": true,
+      "require_approval": true,
+      "post_steps": [
+        {
+          "id": "release-slack-notify",
+          "name": "Notify Slack",
+          "description": "Post a one-line message to the partner's Slack incoming webhook after a successful prod publish. Customize the channel and message format for your own org.",
+          "prompt": "Use Bash to POST a JSON body to ${SLACK_WEBHOOK_URL} reporting that {asset} was published to prod. Example body: {\"text\": \":corthography: Published {asset} to prod (run {run_id})\"}. Skip the post and log a warning if SLACK_WEBHOOK_URL is unset — do not fail the workflow."
+        }
+      ]
+    }
+  },
+  "autonomy": {
+    "level": "guarded",
+    "description": "Inherits the parent's gating: test cycle autonomous, prod cycle requires approval. The Slack notification runs as a post_step inside release, so it fires only after the prod publish step has completed."
+  }
+}

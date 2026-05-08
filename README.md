@@ -26,9 +26,13 @@ The SDK and CLI are public; the API and engine are private. Security is enforced
 |---|---|---|
 | [`@corthos/corthography-sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
 | [`@corthos/corthography-cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
-| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI | Partner engineers in Claude Code |
+| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI, plus four bundled FABER workflows for end-to-end pipeline runs | Partner engineers in Claude Code |
 
-All three are versioned together.
+All three are versioned together. The plugin's bundled FABER workflows
+(`template-query`, `template-render`, `template-publish`, and the composite
+`template-query-render-publish`) can be invoked directly or extended in a
+partner repo with custom pre/post steps — see
+[docs/client/extending-workflows.md](./docs/client/extending-workflows.md).
 
 ## Install
 

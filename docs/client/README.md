@@ -7,9 +7,9 @@ audience: integrators
 
 # Client documentation
 
-Six partner-facing docs covering install, the CLI and SDK references,
-the agent-skill catalog, the edit → test → publish workflow, and a
-troubleshooting page keyed by symptom.
+Seven partner-facing docs covering install, the CLI and SDK references,
+the agent-skill catalog, the edit → test → publish workflow, the bundled
+FABER workflows, and a troubleshooting page keyed by symptom.
 
 | File | Topic |
 |---|---|
@@ -18,6 +18,7 @@ troubleshooting page keyed by symptom.
 | [sdk.md](./sdk.md) | `PressClient` class, methods, types, and error hierarchy |
 | [skills.md](./skills.md) | The 8 `/corthography-press-*` slash commands and when to use each |
 | [workflow.md](./workflow.md) | Edit → test → publish loop with `--ref` and the prod approval gate |
+| [extending-workflows.md](./extending-workflows.md) | The four bundled FABER workflows and how to extend them in your own repo |
 | [troubleshooting.md](./troubleshooting.md) | Symptoms → fixes for the common error states |
 
 The client talks to [api.corthography.ai](../api/) (HTTPS + bearer

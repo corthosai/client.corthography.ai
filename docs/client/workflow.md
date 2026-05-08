@@ -197,6 +197,17 @@ corthography projects --json | jq -r '.[] | .templateKey + "+" + .projectSlugs[0
   | xargs -I {} corthography render {} --env test
 ```
 
+## Higher-level: bundled FABER workflows
+
+If you'd rather drive the loop through a single FABER invocation — with one
+human approval gate between the test cycle and the prod cycle, and a place
+to hang your own pre/post steps — the client plugin ships four FABER
+workflows that wrap the `corthography-press-*` skills:
+`template-query`, `template-render`, `template-publish`, and the composite
+`template-query-render-publish`. See
+[extending-workflows.md](./extending-workflows.md) for invocation, the
+single-gate model, and how to extend any of them from your own repo.
+
 ## What this doc does NOT cover
 
 - How to author or edit the template body itself — see
