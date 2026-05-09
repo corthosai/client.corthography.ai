@@ -1,6 +1,6 @@
 ---
 title: "Extending the bundled FABER workflows"
-description: "Run the client's bundled query/render/publish FABER workflows from your own repo, and extend them with partner-specific pre/post steps without forking."
+description: "Run the client's bundled FABER workflows (query/render/publish/composite/hotfix) from your own repo, and extend them with partner-specific pre/post steps without forking."
 visibility: external
 audience: integrators
 order: 6
@@ -8,10 +8,11 @@ order: 6
 
 # Extending the bundled FABER workflows
 
-The Claude plugin ships four FABER workflows that orchestrate the
-`corthography-press-*` skills (which already wrap the public CLI). You can
-either invoke them as-is, or extend them in your own repo with custom steps —
-Slack notifications, CMS validation, ticket-system updates, anything you need
+The Claude plugin ships five FABER workflows that orchestrate the
+`corthography-press-*` skills (which already wrap the public CLI), plus a
+`template-hotfix` workflow for guided template edits. You can either invoke
+them as-is, or extend them in your own repo with custom steps — Slack
+notifications, CMS validation, ticket-system updates, anything you need
 around the standard pipeline — without forking.
 
 This page covers what's bundled, how to invoke them, and how to extend them.
@@ -35,8 +36,9 @@ You need:
 | `template-render` | evaluate | none | Stage 2: `corthography render <target> --env test --wait`. |
 | `template-publish` | evaluate, release | release | Test publish (autonomous), then prod publish after approval. |
 | `template-query-render-publish` | evaluate, release | release | Full query→render→publish to test (autonomous), one human gate, then full query→render→publish to prod. |
+| `template-hotfix` | frame, build, evaluate | none (inline diff review) | Apply a targeted edit to a template in your local partner-repo clone, push to a branch via your git auth, and verify end-to-end against `--env test` at that branch ref. See [§template-hotfix](#template-hotfix) below. |
 
-All four are leaves — they don't `extends` anything, so partners only inherit
+All five are leaves — they don't `extends` anything, so partners only inherit
 exactly what's listed.
 
 > **Why the individual workflows are test-only.** They're the simplest case.
@@ -60,6 +62,12 @@ For a single stage:
 /fractary-faber-faber-run corthos-corthography:template-query <target>
 /fractary-faber-faber-run corthos-corthography:template-render <target>
 /fractary-faber-faber-run corthos-corthography:template-publish <target>
+```
+
+For a guided template edit:
+
+```
+/fractary-faber-faber-run corthos-corthography:template-hotfix <target>
 ```
 
 The `<target>` is the canonical
@@ -93,6 +101,65 @@ either:
 This is by design — partners cannot self-approve their own prod runs unless
 explicitly granted that flag. The FABER gate and the API gate are independent;
 crossing the FABER gate does not cross the API gate.
+
+## template-hotfix
+
+`template-hotfix` is the workflow for "I need to change one thing in this
+template and ship it." It assumes you have a local clone of your partner
+template repo and your own git auth set up.
+
+### What it does
+
+1. **Frame** — asks for the absolute path to your local clone, a one-line
+   fix description, and a branch name (default
+   `hotfix/<slug>-<YYYYMMDD>`). Aborts on a dirty working tree. Switches
+   the repo onto the hotfix branch.
+2. **Build** — loads all four [template-authoring standards
+   skills](./template-authoring.md) as context (`/corthography-template-spintax`,
+   `-sectioning`, `-fields`, `-config`); applies the edit per your
+   description while honoring those standards; surfaces the diff and asks
+   for go-ahead; commits with a `hotfix: <description>` message and
+   pushes the branch using your own git credentials.
+3. **Evaluate** — runs `corthography query`, `render`, and `publish`
+   against `--ref <branch> --env test`, all autonomously. The published
+   output appears at the test destination so you can eyeball the change
+   before deciding to merge.
+
+### What it does NOT do
+
+- **No promotion to prod.** The release phase is intentionally disabled.
+  Once you've verified the test render, merge the hotfix branch into your
+  partner repo's default branch via your normal review process, then ship
+  to prod with the `template-publish` workflow (or
+  `template-query-render-publish`). Bundling prod into the hotfix flow
+  would force a single ref decision (the unmerged branch vs. the merged
+  SHA) that's better made out-of-band.
+- **No multi-file refactors.** The build step is scoped to the change you
+  describe; the standards skills it loads will push back on incidental
+  cleanup.
+- **No template authoring from scratch.** That's a different workflow
+  (gated to onboarding) — `template-hotfix` only edits an existing
+  template that already has its `index.md.j2` and `config.json` in place.
+
+### Pre-flight
+
+- Local clone of the partner template repo (e.g.
+  `~/GitHub/<your-org>/<your-template-repo>`)
+- Clean working tree on that repo
+- Git auth configured for `git push` to your partner repo (SSH key, gh
+  auth, or personal access token — whatever you normally use)
+- The standard `CORTHOGRAPHY_TOKEN` and an authorized target
+
+### Invocation
+
+```
+/fractary-faber-faber-run corthos-corthography:template-hotfix \
+  dms/education-niche/colleges/overview+computer-science-degree
+```
+
+The frame phase prompts for the path, description, and branch in chat; the
+rest is autonomous except for the diff-review step in build (you'll be
+asked to confirm the diff before commit).
 
 ## Extending a bundled workflow
 

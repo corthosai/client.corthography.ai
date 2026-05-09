@@ -7,18 +7,20 @@ audience: integrators
 
 # Client documentation
 
-Seven partner-facing docs covering install, the CLI and SDK references,
+Eight partner-facing docs covering install, the CLI and SDK references,
 the agent-skill catalog, the edit → test → publish workflow, the bundled
-FABER workflows, and a troubleshooting page keyed by symptom.
+FABER workflows, the template-authoring standards, and a troubleshooting
+page keyed by symptom.
 
 | File | Topic |
 |---|---|
 | [install.md](./install.md) | Three install paths (Claude plugin, CLI binary, SDK) + credential resolution |
 | [cli.md](./cli.md) | `corthography` subcommand reference with flags and examples |
 | [sdk.md](./sdk.md) | `PressClient` class, methods, types, and error hierarchy |
-| [skills.md](./skills.md) | The 8 `/corthography-press-*` slash commands and when to use each |
+| [skills.md](./skills.md) | The `/corthography-press-*` action slash commands and when to use each |
 | [workflow.md](./workflow.md) | Edit → test → publish loop with `--ref` and the prod approval gate |
-| [extending-workflows.md](./extending-workflows.md) | The four bundled FABER workflows and how to extend them in your own repo |
+| [extending-workflows.md](./extending-workflows.md) | The five bundled FABER workflows and how to extend them in your own repo |
+| [template-authoring.md](./template-authoring.md) | What makes a good template — Spintax, sectioning, field references, config.json shape |
 | [troubleshooting.md](./troubleshooting.md) | Symptoms → fixes for the common error states |
 
 The client talks to [api.corthography.ai](../api/) (HTTPS + bearer

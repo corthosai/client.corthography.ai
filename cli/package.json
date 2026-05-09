@@ -1,6 +1,6 @@
 {
   "name": "@corthos/corthography-cli",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Corthography Press command-line interface",
   "license": "MIT",
   "repository": {
@@ -24,7 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@corthos/corthography-sdk": "0.1.5",
+    "@corthos/corthography-sdk": "0.1.6",
     "commander": "^12.0.0"
   },
   "engines": {

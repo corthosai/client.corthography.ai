@@ -201,12 +201,18 @@ corthography projects --json | jq -r '.[] | .templateKey + "+" + .projectSlugs[0
 
 If you'd rather drive the loop through a single FABER invocation — with one
 human approval gate between the test cycle and the prod cycle, and a place
-to hang your own pre/post steps — the client plugin ships four FABER
+to hang your own pre/post steps — the client plugin ships five FABER
 workflows that wrap the `corthography-press-*` skills:
-`template-query`, `template-render`, `template-publish`, and the composite
-`template-query-render-publish`. See
+`template-query`, `template-render`, `template-publish`, the composite
+`template-query-render-publish`, and `template-hotfix` (guided template
+edits with the standards loaded as context, an autopush to a feature
+branch, and an end-to-end `--env test` verification). See
 [extending-workflows.md](./extending-workflows.md) for invocation, the
 single-gate model, and how to extend any of them from your own repo.
+
+For the template-side discipline that the hotfix workflow enforces — and
+that the manual loop benefits from too — see
+[template-authoring.md](./template-authoring.md).
 
 ## What this doc does NOT cover
 
