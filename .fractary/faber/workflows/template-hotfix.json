@@ -1,0 +1,80 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fractary/claude-plugins/main/plugins/faber/config/workflow.schema.json",
+  "id": "template-hotfix",
+  "description": "Apply a targeted fix to an existing Jinja2+Spintax template in the partner's local template repo and verify it with a test render against the engine. Frame collects context (repo path, fix description, branch). Build loads the four corthography-template-* standards skills as context, applies the edit, and pushes a feature branch via the partner's git auth. Evaluate runs corthography query+render+publish against --ref <branch> in the test environment. Promotion to prod is out of scope — once verified, the partner merges the branch and uses the template-publish workflow.",
+  "asset_type": "template",
+  "phases": {
+    "frame": {
+      "enabled": true,
+      "description": "Collect partner-repo path, fix description, branch name. Refuse to proceed on a dirty working tree.",
+      "steps": [
+        {
+          "id": "frame-collect-context",
+          "name": "Collect hotfix context",
+          "description": "Prompt the partner for the absolute path to their local clone of the partner template repo, a one-line description of the fix, and the branch name to use. Verify the path is a git repo on a clean working tree before proceeding.",
+          "prompt": "Prompt the partner (in chat) for: (1) the absolute path to their local clone of the partner template repo for owner from {asset} — if they don't have one, surface the partner-repo URL from press-core's registry and tell them to clone first; (2) a one-line description of the fix; (3) a branch name (default: hotfix/<slug-of-description>-<YYYYMMDD>). Then verify the working tree is clean: run `git -C <path> status --porcelain` via Bash and confirm output is empty. If non-empty, stop the workflow with a clear message ('partner repo has uncommitted changes; commit or stash before running template-hotfix'). Also run `git -C <path> rev-parse --abbrev-ref HEAD` and remember the current branch so we can preserve context. Save the path, description, branch, and original-branch as workflow state for downstream steps."
+        },
+        {
+          "id": "frame-checkout-branch",
+          "name": "Create or checkout the hotfix branch",
+          "description": "Switch the partner's local repo onto the hotfix branch — create it if new, check it out if it already exists.",
+          "prompt": "Use Bash to switch the partner repo at <path> onto the hotfix branch. Try `git -C <path> switch -c <branch>` first; if that fails because the branch already exists, run `git -C <path> switch <branch>` instead. Confirm the active branch with `git -C <path> rev-parse --abbrev-ref HEAD` and report it."
+        }
+      ]
+    },
+    "architect": { "enabled": false },
+    "build": {
+      "enabled": true,
+      "description": "Load the partner-facing template standards as context, apply the edit, ask for partner go-ahead, then commit and push.",
+      "steps": [
+        {
+          "id": "build-load-standards",
+          "name": "Load template standards as context",
+          "description": "Load the four corthography-template-* skills so the standards are available as context for the edit.",
+          "prompt": "Load all four corthography-template-* standards skills as context for the upcoming edit: corthography-template-spintax, corthography-template-sectioning, corthography-template-fields, corthography-template-config. Read each SKILL.md body fully. Briefly summarize back to the partner which of the four are most relevant to their stated fix description from frame-collect-context, and note any of the validation checklists that this fix should satisfy. The standards override any priors the model may have about template authoring — when in doubt, defer to the skill content."
+        },
+        {
+          "id": "build-apply-edit",
+          "name": "Apply the template fix",
+          "description": "Resolve the template path inside the partner repo (flatter layout — no owner tier — per partner-repo-standards), open index.md.j2 (and config.json if needed), apply the fix per the partner's description while honoring the standards loaded above, and surface the diff for partner review before commit.",
+          "prompt": "Resolve the template directory inside the partner repo: from {asset}, take the part before '+' as the template path. The partner repo uses a FLATTER layout than press-core — drop the leading owner tier, so the in-repo path is `<partner-repo-path>/templates/{collection}/{type}/{name}/`. Read index.md.j2 (always present) and config.json (always present). Apply the fix per the description from frame-collect-context, making ONLY the change required — do not refactor surrounding code. While editing, actively consult the standards skills loaded in build-load-standards: gate sections per corthography-template-sectioning, only reference fields per corthography-template-fields, keep Spintax deterministic per corthography-template-spintax, update config.json per corthography-template-config if endpoints/sample_items/item_explode are involved. After applying, show the partner the unified diff (run `git -C <path> diff` via Bash and surface the output) and ask them to confirm before commit. WAIT for explicit go-ahead — do not proceed to build-commit-push automatically."
+        },
+        {
+          "id": "build-commit-push",
+          "name": "Commit and push the hotfix branch",
+          "description": "Commit the staged change with a conventional 'hotfix:' message and push the branch to origin using the partner's own git credentials.",
+          "prompt": "Use Bash to commit and push: `git -C <path> add <changed-files>` then `git -C <path> commit -m 'hotfix: <description-from-frame>'` then `git -C <path> push -u origin <branch>`. Report the resulting commit SHA and the remote branch URL. If the push fails (auth, network, divergent remote), surface the error verbatim and stop — the partner needs to resolve auth or pull and retry. Authentication uses the partner's own git credentials, NOT any press-core credentials."
+        }
+      ]
+    },
+    "evaluate": {
+      "enabled": true,
+      "description": "Run corthography query, render, and publish against --ref <branch> in the test environment to verify the fix end-to-end.",
+      "steps": [
+        {
+          "id": "evaluate-press-query-ref",
+          "name": "Query (test, --ref hotfix-branch)",
+          "description": "Pull fresh data into the test environment, with the engine cloning the partner repo at the hotfix branch ref.",
+          "prompt": "Use the corthography-press-query skill to start a template-query run for target {asset} with --ref <branch> --env test --wait. The --ref flag tells the engine to clone the partner template repo at the hotfix branch before resolving the template. Report the run_id and final status. If the run fails before render even starts, that's a config.json or list_endpoint problem — surface the error and stop."
+        },
+        {
+          "id": "evaluate-press-render-ref",
+          "name": "Render (test, --ref hotfix-branch)",
+          "description": "Render the just-queried data through the edited template at the hotfix ref.",
+          "prompt": "Use the corthography-press-render skill to start a template-render run for target {asset} with --ref <branch> --env test --wait. Report the run_id and final status. If the render fails, the most common causes are: (1) Jinja2 syntax error introduced by the edit, (2) reference to a field the API doesn't actually return (see corthography-template-fields), (3) Spintax bracket imbalance. Surface the engine's error message verbatim — do not retry."
+        },
+        {
+          "id": "evaluate-press-publish-ref",
+          "name": "Publish to test (--ref hotfix-branch)",
+          "description": "Push the rendered output to the test destination so the partner can eyeball the change at the test URL before deciding to merge.",
+          "prompt": "Use the corthography-press-publish skill to start a template-publish run for target {asset} with --env test --wait. Report the run_id and the test destination URL from the response. After this completes, surface a closing message to the partner: (1) all three test runs succeeded; (2) the change is visible at the test destination; (3) when they're satisfied, they should merge the hotfix branch into the partner repo's default branch and use the template-publish workflow (or the composite) to ship to prod — promotion to prod is intentionally NOT part of template-hotfix to avoid ambiguity about which ref ships."
+        }
+      ]
+    },
+    "release": { "enabled": false }
+  },
+  "autonomy": {
+    "level": "autonomous",
+    "description": "Frame and evaluate run autonomously. Build pauses inline (in chat, not via FABER approval gate) for the partner to review the diff before commit-push. Promotion to prod is intentionally a separate workflow."
+  }
+}

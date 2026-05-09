@@ -26,13 +26,16 @@ The SDK and CLI are public; the API and engine are private. Security is enforced
 |---|---|---|
 | [`@corthos/corthography-sdk`](./sdk/js) | Typed SDK wrapping the REST API | Custom integrations, CI scripts |
 | [`@corthos/corthography-cli`](./cli) | `corthography` binary built on the SDK | Engineers in terminals, CI pipelines |
-| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI, plus four bundled FABER workflows for end-to-end pipeline runs | Partner engineers in Claude Code |
+| Claude plugin | Slash commands (`/corthography-press-render`, etc.) wrapping the CLI, four template-authoring standards skills, and five bundled FABER workflows for end-to-end pipeline runs and guided template hotfixes | Partner engineers in Claude Code |
 
 All three are versioned together. The plugin's bundled FABER workflows
-(`template-query`, `template-render`, `template-publish`, and the composite
-`template-query-render-publish`) can be invoked directly or extended in a
-partner repo with custom pre/post steps — see
+(`template-query`, `template-render`, `template-publish`, the composite
+`template-query-render-publish`, and `template-hotfix`) can be invoked
+directly or extended in a partner repo with custom pre/post steps — see
 [docs/client/extending-workflows.md](./docs/client/extending-workflows.md).
+The template-authoring standards skills back the hotfix workflow's edit
+step and are also readable on their own — see
+[docs/client/template-authoring.md](./docs/client/template-authoring.md).
 
 ## Install
 
@@ -94,6 +97,8 @@ console.log(run.runId);
 
 ## Slash commands
 
+### Pipeline action skills (`corthography-press-*`)
+
 | Command | What it does |
 |---|---|
 | `/corthography-press-query {target}` | Stage 1: collect Corthodex API data into S3 chunks (supports `--wait`) |
@@ -104,6 +109,21 @@ console.log(run.runId);
 | `/corthography-press-approve {run_id}` | Approve a run paused at the prod release gate |
 | `/corthography-press-list-projects` | Show projects you're authorized for |
 | `/corthography-press-list-templates` | Show templates you're authorized for |
+
+### Template-authoring standards skills (`corthography-template-*`)
+
+These don't drive any runs — they're partner-facing documentation, loadable
+as context (by the `template-hotfix` workflow) or readable directly.
+
+| Command | What it does |
+|---|---|
+| `/corthography-template-spintax` | Spintax variation patterns and deterministic seeding |
+| `/corthography-template-sectioning` | How to gate sections so partial data degrades gracefully |
+| `/corthography-template-fields` | Referencing entity fields safely (avoiding the `<nil>` failure mode) |
+| `/corthography-template-config` | `config.json` schema, `sample_items`, `item_explode` |
+
+See [docs/client/template-authoring.md](./docs/client/template-authoring.md)
+for an introduction.
 
 `{target}` is the canonical `{owner}/{collection}/{type}/{name}+{project_slug}` string, e.g., `dms/education-niche/colleges/overview+computer-science-degree`.
 

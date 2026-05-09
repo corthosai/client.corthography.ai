@@ -1,6 +1,6 @@
 {
   "name": "@corthos/corthography-sdk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "TypeScript SDK for the Corthography Press API",
   "license": "MIT",
   "repository": {
