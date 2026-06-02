@@ -21,11 +21,11 @@ description: Show the current status of a Corthography Press run. Use when check
 corthography status <run_id> [--json] [--wait] [--wait-timeout <s>] [--poll-interval <s>]
 ```
 
-Output includes: workflow, target, environment, status, current_phase, started_at, completed_at, error.
+Output includes: workflow, target, environment, status, current_phase, started_at, completed_at, error, and a `progress` line when the engine reports it (live `items` for a single-job query; the shard fan-out for a sharded query, whose item count stays 0 until it finalizes).
 
 ### Polling option
 
-Without `--wait`, prints the current status once and exits. With `--wait`, the CLI polls internally and blocks until the run is terminal, then prints final status. This avoids burning agent context on a manual poll loop. Exit codes:
+Without `--wait`, prints the current status once and exits. With `--wait`, the CLI polls internally and blocks until the run is terminal, then prints final status — emitting a live `progress` line as the run advances (deduped to changes only) so a long query isn't silent. This avoids burning agent context on a manual poll loop. Exit codes:
 
 - `0` — succeeded
 - `1` — failed or cancelled (or any preexisting CLI/network error)

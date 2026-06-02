@@ -4,6 +4,7 @@ import type {
   ClientOptions,
   HealthResponse,
   ProjectListItem,
+  RunProgress,
   RunSummary,
   StartRunRequest,
   StartRunResponse,
@@ -185,5 +186,27 @@ function toRunSummary(raw: Record<string, unknown>): RunSummary {
     sfnExecutionArn: (raw.sfn_execution_arn as string | undefined) ?? undefined,
     outputPaths: (raw.output_paths as Record<string, string> | undefined) ?? undefined,
     error: (raw.error as string | undefined) ?? undefined,
+    progress: toRunProgress(raw.progress),
+  };
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim() !== "" && !Number.isNaN(Number(value))) {
+    return Number(value);
+  }
+  return undefined;
+}
+
+function toRunProgress(raw: unknown): RunProgress | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const p = raw as Record<string, unknown>;
+  return {
+    phase: (p.phase as string | undefined) ?? undefined,
+    status: (p.status as string | undefined) ?? undefined,
+    itemsFetched: toNumber(p.items_fetched ?? p.itemsFetched),
+    chunksCreated: toNumber(p.chunks_created ?? p.chunksCreated),
+    totalShards: toNumber(p.total_shards ?? p.totalShards),
+    updatedAt: (p.updated_at as string | undefined) ?? (p.updatedAt as string | undefined) ?? undefined,
   };
 }

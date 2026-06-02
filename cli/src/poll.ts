@@ -14,6 +14,10 @@ export interface PollOptions {
   timeoutMs?: number;
   /** Cancel mid-poll. */
   signal?: AbortSignal;
+  /** Called once per poll for each still-running cycle (not for the terminal /
+   * paused response). Lets `--wait` emit a periodic progress line instead of
+   * blocking silently. Must not throw. */
+  onUpdate?: (run: RunSummary) => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 600_000;
@@ -48,6 +52,8 @@ export async function pollUntilDone(
     if (run.status === "awaiting_approval") {
       return { run, reason: "paused" };
     }
+
+    opts.onUpdate?.(run);
 
     const now = Date.now();
     if (now >= deadline) {

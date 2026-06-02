@@ -111,6 +111,42 @@ describe("PressClient", () => {
     expect(run.runId).toBe("r-9");
     expect(run.partnerId).toBe("dms");
     expect(run.sfnExecutionArn).toBe("arn:...:r-9");
+    expect(run.progress).toBeUndefined();
+  });
+
+  it("maps the nested progress object snake_case → camelCase", async () => {
+    const fetchImpl = mockFetch(async () => {
+      return new Response(
+        JSON.stringify({
+          run_id: "r-10",
+          partner_id: "dms",
+          workflow: "template-query",
+          target: "dms/c/t/n+s",
+          environment: "test",
+          status: "running",
+          started_at: "2026-05-03T00:00:00Z",
+          progress: {
+            phase: "query",
+            status: "running",
+            items_fetched: 1400,
+            chunks_created: 0,
+            total_shards: 12,
+            updated_at: "2026-05-03T00:01:00Z",
+          },
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    });
+    const client = new PressClient({ token: "x", fetch: fetchImpl });
+    const run = await client.getRun("r-10");
+    expect(run.progress).toEqual({
+      phase: "query",
+      status: "running",
+      itemsFetched: 1400,
+      chunksCreated: 0,
+      totalShards: 12,
+      updatedAt: "2026-05-03T00:01:00Z",
+    });
   });
 
   it("listProjects normalises the response", async () => {

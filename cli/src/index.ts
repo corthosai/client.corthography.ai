@@ -10,7 +10,7 @@ import { Command } from "commander";
 import { PressClient } from "@corthos/corthography-sdk";
 import { resolveConfig } from "./config.js";
 import { resolveTarget } from "./target.js";
-import { formatJson, formatRunHumanReadable } from "./format.js";
+import { formatJson, formatProgressLine, formatRunHumanReadable } from "./format.js";
 import { pollUntilDone, type PollReason } from "./poll.js";
 
 interface WaitOpts {
@@ -102,7 +102,22 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   ): Promise<void> => {
     const timeoutMs = parsePositiveSeconds(waitOpts.waitTimeout, "--wait-timeout") ?? 600_000;
     const pollIntervalMs = parsePositiveSeconds(waitOpts.pollInterval, "--poll-interval");
-    const { run, reason } = await pollUntilDone(client, runId, { timeoutMs, pollIntervalMs });
+    // Emit a live progress line as the run advances (deduped: only when it
+    // changes), so `--wait` isn't silent for a long query. Suppressed in --json
+    // mode, which prints the final run object once.
+    let lastProgressLine: string | undefined;
+    const { run, reason } = await pollUntilDone(client, runId, {
+      timeoutMs,
+      pollIntervalMs,
+      onUpdate: (r) => {
+        if (isJson()) return;
+        const line = formatProgressLine(r);
+        if (line && line !== lastProgressLine) {
+          out(line);
+          lastProgressLine = line;
+        }
+      },
+    });
     if (isJson()) {
       out(formatJson(run));
     } else {
