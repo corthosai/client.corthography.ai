@@ -34,6 +34,20 @@ export interface StartRunResponse {
   status: "queued";
 }
 
+/** Live, best-effort progress for an in-flight run, written by the engine as a
+ * long-running job advances (e.g. template-query). Absent until a job reports
+ * it. For sharded queries `itemsFetched` stays 0 until the run finalizes (the
+ * per-entity live count lives in the engine's S3 heartbeat, not the run
+ * record); `totalShards` shows the fan-out. Not a substitute for `status`. */
+export interface RunProgress {
+  phase?: string;
+  status?: string;
+  itemsFetched?: number;
+  chunksCreated?: number;
+  totalShards?: number;
+  updatedAt?: string;
+}
+
 export interface RunSummary {
   runId: string;
   partnerId: string;
@@ -47,6 +61,7 @@ export interface RunSummary {
   sfnExecutionArn?: string;
   outputPaths?: Record<string, string>;
   error?: string;
+  progress?: RunProgress;
 }
 
 export interface ProjectListItem {

@@ -4,6 +4,7 @@ export type {
   StartRunRequest,
   StartRunResponse,
   RunSummary,
+  RunProgress,
   ProjectListItem,
   TemplateListItem,
   HealthResponse,

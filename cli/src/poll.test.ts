@@ -48,6 +48,17 @@ describe("pollUntilDone", () => {
     expect(run.status).toBe("cancelled");
   });
 
+  it("calls onUpdate once per still-running cycle, not for the terminal response", async () => {
+    const client = stubClient(["running", "running", "succeeded"]);
+    const seen: string[] = [];
+    const { reason } = await pollUntilDone(client as never, "r-1", {
+      pollIntervalMs: 1,
+      onUpdate: (r) => seen.push(r.status),
+    });
+    expect(reason).toBe("terminal");
+    expect(seen).toEqual(["running", "running"]);
+  });
+
   it("returns paused when run is awaiting_approval", async () => {
     const client = stubClient(["queued", "awaiting_approval"]);
     const { run, reason } = await pollUntilDone(client as never, "r-1", { pollIntervalMs: 1 });
