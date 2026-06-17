@@ -20,6 +20,19 @@ describe("resolveTarget", () => {
     ).toBe("mf/some/other/template+slug");
   });
 
+  it("passes deep (>=4 segment) full targets through unchanged", () => {
+    // Template paths can be deeper than {owner}/{collection}/{type}/{name},
+    // e.g. majors/rankings/top-ranked or colleges/paying-for-college/tuition-and-fees.
+    expect(
+      resolveTarget("mf/college-factual/majors/rankings/top-ranked+college-factual", {
+        owner: "mf",
+      }),
+    ).toBe("mf/college-factual/majors/rankings/top-ranked+college-factual");
+    expect(
+      resolveTarget("mf/college-factual/colleges/paying-for-college/tuition-and-fees+college-factual"),
+    ).toBe("mf/college-factual/colleges/paying-for-college/tuition-and-fees+college-factual");
+  });
+
   it("works without a project_slug suffix", () => {
     expect(resolveTarget("education-niche/colleges/overview", { owner: "dms" })).toBe(
       "dms/education-niche/colleges/overview",
@@ -32,9 +45,8 @@ describe("resolveTarget", () => {
     );
   });
 
-  it("errors when path has the wrong number of segments", () => {
+  it("errors when path has too few segments", () => {
     expect(() => resolveTarget("a/b+slug", { owner: "dms" })).toThrow(/path segments/);
-    expect(() => resolveTarget("a/b/c/d/e+slug", { owner: "dms" })).toThrow(/path segments/);
   });
 
   it("errors on empty target", () => {
