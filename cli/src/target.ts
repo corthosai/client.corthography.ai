@@ -5,6 +5,14 @@
  * From inside a partner repo, the owner is implicit. This helper accepts a
  * 3-segment shorthand (`{collection}/{type}/{name}+{project_slug}`) and
  * prepends the configured owner so partners don't have to repeat it.
+ *
+ * A 3-segment path is ambiguous: it can be that owner-implicit shorthand OR a
+ * full owner/collection/type **root-collection** template (e.g.
+ * `mf/college-factual/majors`, whose overview lives at the collection root with
+ * no `…/name` segment — the API supports these). We resolve the ambiguity by the
+ * configured owner: when one IS set, shorthand prepending wins (the partner is
+ * working from inside their repo); when none is set, there is nothing to prepend,
+ * so the path is taken as an already-complete owner/collection/type slug.
  */
 
 export interface ResolveTargetOptions {
@@ -28,14 +36,14 @@ export function resolveTarget(rawTarget: string, opts: ResolveTargetOptions = {}
   if (segments.length >= 4) {
     return target;
   }
-  // Owner-implicit shorthand: {collection}/{type}/{name} — prepend the configured owner.
+  // 3 segments. With a configured owner this is the owner-implicit shorthand
+  // {collection}/{type}/{name} — prepend the owner. With no owner configured
+  // there is nothing to prepend, so treat it as an already-complete
+  // {owner}/{collection}/{type} root-collection slug (e.g. mf/college-factual/majors)
+  // and pass it through unchanged.
   if (segments.length === 3) {
     if (!opts.owner) {
-      throw new Error(
-        `target "${target}" is missing the owner segment. ` +
-          "Either prepend the owner (e.g., dms/...) or set CORTHOGRAPHY_OWNER " +
-          "(env var or .fractary/env/.env.<env>).",
-      );
+      return target;
     }
     return `${opts.owner}/${segments.join("/")}${suffix}`;
   }

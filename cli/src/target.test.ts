@@ -39,10 +39,14 @@ describe("resolveTarget", () => {
     );
   });
 
-  it("errors clearly when 3 segments and no owner is configured", () => {
-    expect(() => resolveTarget("education-niche/colleges/overview+slug")).toThrow(
-      /missing the owner segment/,
+  it("treats a 3-segment path as a full owner/collection/type root slug when no owner is configured", () => {
+    // Root-collection templates (overview at the collection root, no /name segment),
+    // e.g. mf/college-factual/majors — the API supports these. With no owner to
+    // prepend, the path is already complete and passes through unchanged.
+    expect(resolveTarget("mf/college-factual/majors+college-factual")).toBe(
+      "mf/college-factual/majors+college-factual",
     );
+    expect(resolveTarget("mf/college-factual/majors")).toBe("mf/college-factual/majors");
   });
 
   it("errors when path has too few segments", () => {
