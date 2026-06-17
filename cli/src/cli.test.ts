@@ -127,22 +127,28 @@ describe("runCli", () => {
     );
   });
 
-  it("3-segment target without an owner exits non-zero", async () => {
+  it("3-segment target without an owner is taken as a full root-collection slug", async () => {
+    // No owner to prepend → mf/college-factual/majors is already a complete
+    // owner/collection/type root-collection slug; dispatch it unchanged.
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-6", status: "queued" });
+    const client = makeStubClient({ startRun });
     const out: string[] = [];
     const errOut: string[] = [];
     const code = await runCli(
-      ["node", "corthography", "query", "education-niche/colleges/overview+slug"],
+      ["node", "corthography", "query", "mf/college-factual/majors+college-factual"],
       {
         env: TEST_ENV,
         credentialsPath: "/non-existent",
         fractaryRoot: "",
-        makeClient: () => ({ startRun: vi.fn() }) as never,
+        makeClient: () => client as never,
         out: (s) => out.push(s),
         err: (s) => errOut.push(s),
       },
     );
-    expect(code).toBe(1);
-    expect(errOut.join("\n")).toMatch(/owner segment/);
+    expect(code).toBe(0);
+    expect(startRun).toHaveBeenCalledWith(
+      expect.objectContaining({ target: "mf/college-factual/majors+college-factual" }),
+    );
   });
 
   it("query --wait blocks until terminal and exits 0 on success", async () => {
