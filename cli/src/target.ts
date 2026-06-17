@@ -22,9 +22,13 @@ export function resolveTarget(rawTarget: string, opts: ResolveTargetOptions = {}
   const suffix = plus >= 0 ? target.slice(plus) : "";
   const segments = path.split("/").filter(Boolean);
 
-  if (segments.length === 4) {
+  // Full form already carries the owner as the first segment. Template paths can
+  // be deeper than {owner}/{collection}/{type}/{name} (e.g. majors/rankings/top-ranked
+  // or colleges/paying-for-college/tuition-and-fees), so accept any depth >= 4.
+  if (segments.length >= 4) {
     return target;
   }
+  // Owner-implicit shorthand: {collection}/{type}/{name} — prepend the configured owner.
   if (segments.length === 3) {
     if (!opts.owner) {
       throw new Error(
