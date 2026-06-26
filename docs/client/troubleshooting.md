@@ -66,8 +66,28 @@ or workflow. Contact your press-core liaison; reference the
 `requestId`. See [../press/governance.md § Authorization scope](../press/governance.md#authorization-scope)
 for what's gated.
 
-A `403` on a `publish --env prod` against a target that works in
-`test` usually means your scope authorizes test only. Same fix.
+A `403` on a `--env prod` command against a target that works in
+`test` usually means **the wrong token reached the prod API**, not that
+prod is unauthorized. Check these first before escalating:
+
+- **A test token is shadowing `--env prod`.** The `--env`-selected
+  `.fractary/env/.env.<env>` file outranks ambient env vars, but a
+  `--token` flag still wins — and on older client versions an exported
+  `CORTHOGRAPHY_TOKEN` (e.g. from `source`-ing `.env.test`) could shadow
+  the file. Don't `source` env files; just run from the partner repo so
+  `--env prod` reads `.env.prod`. To be certain, pass `--token` explicitly.
+- **`.env.prod` is missing or holds a test/dev token.** Prod needs the
+  per-owner operator token (the `<owner>` record in `partners.yaml`, which
+  is the only one scoped `[test, prod]`); the `<owner>-test` developer
+  token is test-only by design. Ensure `.fractary/env/.env.prod` carries
+  the operator token.
+- **Checking a prod run's status?** `status` / `list` / `logs` / `approve`
+  also take `--env` — a prod run is invisible to the default (test)
+  endpoint. Use `status <run_id> --env prod`.
+
+If the token is definitely the prod operator token and it still 403s,
+then it's a genuine scope gap — contact your press-core liaison with the
+`requestId`.
 
 ## Quotas & rate limits
 

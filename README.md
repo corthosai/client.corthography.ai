@@ -151,9 +151,11 @@ Polling cadence defaults to 5s for the first 30s and 15s thereafter; override wi
 These can come from any of the following, listed high → low precedence:
 
 1. CLI flags `--token` / `--api`
-2. Env vars `CORTHOGRAPHY_TOKEN`, `CORTHOGRAPHY_API`, `CORTHOGRAPHY_OWNER`
-3. `.fractary/env/.env.<env>` in the partner repo (walked up from cwd; `<env>` follows the subcommand's `--env` flag, defaults to `test`)
+2. `.fractary/env/.env.<env>` in the partner repo (walked up from cwd; `<env>` follows the subcommand's `--env` flag, defaults to `test`)
+3. Env vars `CORTHOGRAPHY_TOKEN`, `CORTHOGRAPHY_API`, `CORTHOGRAPHY_OWNER`
 4. `~/.corthography/credentials` (TOML-ish key=value)
+
+> The `--env`-selected file (2) outranks the ambient env vars (3) on purpose: those vars are environment-agnostic and can't honor `--env`, so if they outranked the file, a `CORTHOGRAPHY_TOKEN` left in your shell (e.g. from `source`-ing `.env.test`) would silently shadow `--env prod` and send a test token to the prod API. Use `--token` for a one-off override. Env vars still apply normally when there's no matching `.env.<env>` file (e.g. CI).
 
 ```bash
 CORTHOGRAPHY_TOKEN=...                              # required
