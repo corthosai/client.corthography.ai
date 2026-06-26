@@ -177,11 +177,12 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("status <run_id>")
     .description("Show the current status of a run")
+    .option("--env <env>", "test or prod (must match the run's environment)", "test")
     .option("--wait", "Block until the run reaches a terminal state")
     .option("--wait-timeout <seconds>", "Max wait time when --wait is set (default: 600)")
     .option("--poll-interval <seconds>", "Fixed poll cadence (default: adaptive 5s/15s)")
-    .action(async (runId: string, opts: WaitOpts) => {
-      const { client } = buildContext();
+    .action(async (runId: string, opts: { env: string } & WaitOpts) => {
+      const { client } = buildContext(opts.env);
       if (opts.wait) {
         await runWaitFlow(client, runId, opts);
         return;
@@ -193,10 +194,11 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("list")
     .description("List your recent runs")
+    .option("--env <env>", "test or prod", "test")
     .option("--limit <n>", "How many to return", "20")
     .option("--status <status>", "Filter by status (queued, running, succeeded, failed, ...)")
-    .action(async (opts: { limit: string; status?: string }) => {
-      const { client } = buildContext();
+    .action(async (opts: { env: string; limit: string; status?: string }) => {
+      const { client } = buildContext(opts.env);
       const runs = await client.listRuns({ limit: Number(opts.limit), status: opts.status });
       out(isJson() ? formatJson(runs) : runs.map(formatRunHumanReadable).join("\n---\n"));
     });
@@ -204,8 +206,9 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("logs <run_id>")
     .description("Show the CloudWatch log group for a run")
-    .action(async (runId: string) => {
-      const { client } = buildContext();
+    .option("--env <env>", "test or prod (must match the run's environment)", "test")
+    .action(async (runId: string, opts: { env: string }) => {
+      const { client } = buildContext(opts.env);
       const r = await client.getRunLogs(runId);
       out(isJson() ? formatJson(r) : `log_group: ${r.logGroup}`);
     });
@@ -213,10 +216,11 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("approve <run_id>")
     .description("Approve a run paused at the prod release gate")
+    .option("--env <env>", "test or prod (must match the run's environment)", "prod")
     .option("--reject", "Reject instead of approve")
     .option("--reason <reason>", "Reason for the decision")
-    .action(async (runId: string, opts: { reject?: boolean; reason?: string }) => {
-      const { client } = buildContext();
+    .action(async (runId: string, opts: { env: string; reject?: boolean; reason?: string }) => {
+      const { client } = buildContext(opts.env);
       const r = await client.approveRun(runId, {
         decision: opts.reject ? "reject" : "approve",
         reason: opts.reason,
@@ -227,8 +231,9 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("projects")
     .description("List projects you're authorized to target")
-    .action(async () => {
-      const { client } = buildContext();
+    .option("--env <env>", "test or prod", "test")
+    .action(async (opts: { env: string }) => {
+      const { client } = buildContext(opts.env);
       const projects = await client.listProjects();
       out(
         isJson()
@@ -242,8 +247,9 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
   program
     .command("templates")
     .description("List templates you're authorized to target")
-    .action(async () => {
-      const { client } = buildContext();
+    .option("--env <env>", "test or prod", "test")
+    .action(async (opts: { env: string }) => {
+      const { client } = buildContext(opts.env);
       const templates = await client.listTemplates();
       out(isJson() ? formatJson(templates) : templates.map((t) => t.templateKey).join("\n"));
     });

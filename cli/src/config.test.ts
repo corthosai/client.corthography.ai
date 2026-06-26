@@ -31,15 +31,38 @@ describe("resolveConfig", () => {
     expect(cfg.token).toBe("fractary-token");
   });
 
-  it("env var beats fractary file", () => {
-    writeFractaryEnv("test", "CORTHOGRAPHY_TOKEN=from-file\n");
+  it("the --env file beats an ambient env var (so a sourced test token can't shadow --env prod)", () => {
+    writeFractaryEnv("prod", "CORTHOGRAPHY_TOKEN=from-prod-file\n");
+    const cfg = resolveConfig({
+      env: { CORTHOGRAPHY_TOKEN: "sourced-test-token" },
+      credentialsPath: "/non-existent",
+      fractaryRoot: tmpRoot,
+      cliEnv: "prod",
+    });
+    expect(cfg.token).toBe("from-prod-file");
+  });
+
+  it("falls back to the ambient env var when the --env file has no token (CI / no repo file)", () => {
+    // no .env.prod written → fractary creds empty for prod
     const cfg = resolveConfig({
       env: { CORTHOGRAPHY_TOKEN: "from-env" },
       credentialsPath: "/non-existent",
       fractaryRoot: tmpRoot,
-      cliEnv: "test",
+      cliEnv: "prod",
     });
     expect(cfg.token).toBe("from-env");
+  });
+
+  it("an explicit --token still overrides the --env file", () => {
+    writeFractaryEnv("prod", "CORTHOGRAPHY_TOKEN=from-prod-file\n");
+    const cfg = resolveConfig({
+      cliToken: "explicit-flag-token",
+      env: { CORTHOGRAPHY_TOKEN: "sourced-test-token" },
+      credentialsPath: "/non-existent",
+      fractaryRoot: tmpRoot,
+      cliEnv: "prod",
+    });
+    expect(cfg.token).toBe("explicit-flag-token");
   });
 
   it("fractary file beats ~/.corthography/credentials", () => {
@@ -98,7 +121,7 @@ describe("resolveConfig", () => {
     expect(cfg.owner).toBe("mf");
   });
 
-  it("CORTHOGRAPHY_OWNER env var beats the fractary file", () => {
+  it("the fractary file's CORTHOGRAPHY_OWNER beats an ambient env var", () => {
     writeFractaryEnv("test", "CORTHOGRAPHY_TOKEN=t\nCORTHOGRAPHY_OWNER=from-file\n");
     const cfg = resolveConfig({
       env: { CORTHOGRAPHY_OWNER: "from-env" },
@@ -106,7 +129,7 @@ describe("resolveConfig", () => {
       fractaryRoot: tmpRoot,
       cliEnv: "test",
     });
-    expect(cfg.owner).toBe("from-env");
+    expect(cfg.owner).toBe("from-file");
   });
 
   it("error message names the env-specific file", () => {

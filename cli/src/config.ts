@@ -2,8 +2,11 @@
  *
  * Precedence (high → low):
  *   1. --token / --api flags
- *   2. CORTHOGRAPHY_TOKEN / CORTHOGRAPHY_API / CORTHOGRAPHY_OWNER env vars
- *   3. .fractary/env/.env.<env> in the project (walked up from cwd)
+ *   2. .fractary/env/.env.<env> in the project (walked up from cwd; selected by
+ *      --env, so it is authoritative over the env-agnostic ambient vars below —
+ *      which cannot distinguish test from prod and would otherwise let a sourced
+ *      test token shadow `--env prod`)
+ *   3. CORTHOGRAPHY_TOKEN / CORTHOGRAPHY_API / CORTHOGRAPHY_OWNER env vars
  *   4. ~/.corthography/credentials (key=value, one per line)
  *
  * <env> resolution: cliEnv arg → CORTHOGRAPHY_ENV env var → "test".
@@ -54,10 +57,14 @@ export function resolveConfig(opts: ResolveOptions = {}): ResolvedConfig {
     ? readDotenvFile(join(fractaryRoot, ".fractary", "env", `.env.${cliEnv}`))
     : {};
 
-  const token = opts.cliToken ?? env.CORTHOGRAPHY_TOKEN ?? fractaryCreds.token ?? fileCreds.token;
+  // The .env.<env> file is selected by --env, so it is authoritative over the
+  // env-agnostic ambient CORTHOGRAPHY_* vars (which can't distinguish test from
+  // prod — otherwise a sourced test token shadows `--env prod`). An explicit
+  // --token / --api flag still overrides everything.
+  const token = opts.cliToken ?? fractaryCreds.token ?? env.CORTHOGRAPHY_TOKEN ?? fileCreds.token;
   const apiUrl =
-    opts.cliApi ?? env.CORTHOGRAPHY_API ?? fractaryCreds.apiUrl ?? fileCreds.apiUrl ?? defaultApiUrl(cliEnv);
-  const owner = env.CORTHOGRAPHY_OWNER ?? fractaryCreds.owner ?? fileCreds.owner;
+    opts.cliApi ?? fractaryCreds.apiUrl ?? env.CORTHOGRAPHY_API ?? fileCreds.apiUrl ?? defaultApiUrl(cliEnv);
+  const owner = fractaryCreds.owner ?? env.CORTHOGRAPHY_OWNER ?? fileCreds.owner;
 
   if (!token) {
     throw new Error(
