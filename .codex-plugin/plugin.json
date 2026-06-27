@@ -1,6 +1,6 @@
 {
     "name": "corthos-corthography",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Corthos AI Corthography partner client — slash commands for query / render / publish workflows. Wraps the @corthos/corthography-cli binary.",
     "author": {
         "name": "Corthos",
