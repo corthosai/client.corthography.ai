@@ -3,25 +3,37 @@ on:
   push:
     tags: ['v*']
 
+# Publishes @corthos/corthography-{sdk,cli} via npm trusted publishing (OIDC):
+# GitHub Actions proves its identity to npm, so there is no long-lived npm token
+# to expire (NPM_TOKEN silently broke the v0.1.7 and v0.1.8 publishes, #35).
+# Requires, once per package on npmjs.com: Settings → Trusted Publisher →
+# GitHub Actions → corthosai / client.corthography.ai / release.yml.
+# Provenance attestations are generated automatically.
+
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # trusted publishing does not support self-hosted runners
     permissions:
       contents: read
-      id-token: write
+      id-token: write # required: lets the job mint the OIDC token npm verifies
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24' # trusted publishing needs Node >= 22.14 and npm >= 11.5.1
           registry-url: 'https://registry.npmjs.org'
-          cache: npm
+          package-manager-cache: false # no dependency caching in release builds (npm guidance)
+      - name: Check npm supports trusted publishing
+        run: |
+          v="$(npm --version)"
+          echo "npm $v"
+          if [ "$(printf '%s\n' 11.5.1 "$v" | sort -V | head -n1)" != "11.5.1" ]; then
+            echo "::error::npm $v is older than 11.5.1, which trusted publishing requires"
+            exit 1
+          fi
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - run: npm publish --workspace @corthos/corthography-sdk --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm publish --workspace @corthos/corthography-cli --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # SDK first: the CLI depends on the exact same @corthos/corthography-sdk version.
+      - run: npm publish --workspace @corthos/corthography-sdk --access public
+      - run: npm publish --workspace @corthos/corthography-cli --access public
