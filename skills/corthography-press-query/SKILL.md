@@ -43,7 +43,7 @@ Credential resolution (handled inside the CLI, listed for reference only): `--to
 ## Errors and what they mean
 
 - `CORTHOGRAPHY_TOKEN` missing → `corthography` exits non-zero with a clear message; ask the partner to set it via env var, `.fractary/env/.env.<env>`, or `~/.corthography/credentials`
-- "missing the owner segment" → the partner used a 3-segment target without `CORTHOGRAPHY_OWNER` set. Either prepend the owner (e.g., `dms/...`) or set the env var.
+- 403 `ScopeViolation` naming a doubled owner (e.g. `mf/mf/…`) → an old CLI (< 0.1.8) prepended the owner to a 3-segment root-collection target that already had it; upgrade the CLI, or pass the target with `CORTHOGRAPHY_OWNER` unset.
 - 403 / `PressScopeError` → the target is not in the partner's authorization registry. Don't retry; surface the API error message verbatim
 - 429 / `PressQuotaError` → too many concurrent runs; suggest waiting for an in-flight run to complete
 

@@ -49,6 +49,32 @@ describe("resolveTarget", () => {
     expect(resolveTarget("mf/college-factual/majors")).toBe("mf/college-factual/majors");
   });
 
+  it("passes an owner-qualified 3-segment root slug through when the owner is configured (#29)", () => {
+    // Previously prepended the owner again → mf/mf/college-factual/careers → 403.
+    expect(resolveTarget("mf/college-factual/careers+college-factual", { owner: "mf" })).toBe(
+      "mf/college-factual/careers+college-factual",
+    );
+    expect(resolveTarget("dms/education/colleges+computer-science-degree", { owner: "dms" })).toBe(
+      "dms/education/colleges+computer-science-degree",
+    );
+    expect(resolveTarget("mf/college-factual/majors", { owner: "mf" })).toBe(
+      "mf/college-factual/majors",
+    );
+  });
+
+  it("still prepends when the first segment is a different owner's name", () => {
+    // Only the CONFIGURED owner marks a path as qualified; anything else is shorthand.
+    expect(resolveTarget("mf/college-factual/careers+college-factual", { owner: "dms" })).toBe(
+      "dms/mf/college-factual/careers+college-factual",
+    );
+  });
+
+  it("trims whitespace around an owner-qualified 3-segment target", () => {
+    expect(resolveTarget("  dms/education/colleges+computer-science-degree  ", { owner: "dms" })).toBe(
+      "dms/education/colleges+computer-science-degree",
+    );
+  });
+
   it("errors when path has too few segments", () => {
     expect(() => resolveTarget("a/b+slug", { owner: "dms" })).toThrow(/path segments/);
   });
