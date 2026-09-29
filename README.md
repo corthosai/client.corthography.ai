@@ -177,7 +177,14 @@ corthography query education-niche/colleges/overview+computer-science-degree
 corthography query dms/education-niche/colleges/overview+computer-science-degree
 ```
 
-A 3-segment target without an owner configured fails with a clear error. 4-segment targets always pass through unchanged.
+A 3-segment target that already starts with the configured owner is treated as a full **root-collection** slug (`{owner}/{collection}/{type}`, e.g. a collection overview) and passes through unchanged, as does any 3-segment target when no owner is configured:
+
+```bash
+# With CORTHOGRAPHY_OWNER=mf set, resolves to mf/college-factual/careers (not mf/mf/…):
+corthography query mf/college-factual/careers+college-factual
+```
+
+Targets with 4+ segments always pass through unchanged. (If a collection shares its owner's name, spell its targets out in full.)
 
 ## Development
 

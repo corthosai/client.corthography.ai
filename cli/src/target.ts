@@ -9,10 +9,15 @@
  * A 3-segment path is ambiguous: it can be that owner-implicit shorthand OR a
  * full owner/collection/type **root-collection** template (e.g.
  * `mf/college-factual/majors`, whose overview lives at the collection root with
- * no `…/name` segment — the API supports these). We resolve the ambiguity by the
- * configured owner: when one IS set, shorthand prepending wins (the partner is
- * working from inside their repo); when none is set, there is nothing to prepend,
- * so the path is taken as an already-complete owner/collection/type slug.
+ * no `…/name` segment — the API supports these). We resolve it by the FIRST
+ * segment (#29):
+ *   - no owner configured → nothing to prepend; already-complete root slug.
+ *   - first segment IS the configured owner → already owner-qualified root slug;
+ *     pass through (prepending here produced `mf/mf/…` → 403 ScopeViolation).
+ *   - otherwise → shorthand `{collection}/{type}/{name}`; prepend the owner.
+ * Edge case: if a collection shares its owner's name, its 3-segment shorthand
+ * reads as owner-qualified — use the full form (`{owner}/{collection}/…`, 4+
+ * segments), which always passes through.
  */
 
 export interface ResolveTargetOptions {
@@ -36,13 +41,12 @@ export function resolveTarget(rawTarget: string, opts: ResolveTargetOptions = {}
   if (segments.length >= 4) {
     return target;
   }
-  // 3 segments. With a configured owner this is the owner-implicit shorthand
-  // {collection}/{type}/{name} — prepend the owner. With no owner configured
-  // there is nothing to prepend, so treat it as an already-complete
-  // {owner}/{collection}/{type} root-collection slug (e.g. mf/college-factual/majors)
-  // and pass it through unchanged.
+  // 3 segments: an already-complete {owner}/{collection}/{type} root-collection
+  // slug (e.g. mf/college-factual/majors) when there is no owner to prepend or
+  // when it already starts with the configured owner; otherwise the
+  // owner-implicit shorthand {collection}/{type}/{name} — prepend the owner.
   if (segments.length === 3) {
-    if (!opts.owner) {
+    if (!opts.owner || segments[0] === opts.owner) {
       return target;
     }
     return `${opts.owner}/${segments.join("/")}${suffix}`;
