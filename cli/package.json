@@ -13,7 +13,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "corthography": "./dist/bin.js"
+    "corthography": "dist/bin.js"
   },
   "files": [
     "dist",

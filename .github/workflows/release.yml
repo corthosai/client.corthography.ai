@@ -34,6 +34,35 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      # npm silently "auto-corrects" an invalid package.json at publish time — npm 11
+      # dropped the CLI's `bin` this way, which would ship a CLI with no command.
+      # Fail instead of publishing a manifest that differs from the repo's.
+      - name: Check npm will publish package.json unmodified
+        run: |
+          for ws in @corthos/corthography-sdk @corthos/corthography-cli; do
+            out="$(npm publish --dry-run --workspace "$ws" 2>&1)" || { echo "$out"; exit 1; }
+            if printf '%s' "$out" | grep -q "auto-corrected"; then
+              printf '%s\n' "$out" | grep -A5 "auto-corrected"
+              echo "::error::npm would rewrite $ws's package.json at publish — run 'npm pkg fix' in that workspace"
+              exit 1
+            fi
+          done
       # SDK first: the CLI depends on the exact same @corthos/corthography-sdk version.
-      - run: npm publish --workspace @corthos/corthography-sdk --access public
-      - run: npm publish --workspace @corthos/corthography-cli --access public
+      # Each publish is skipped when that version is already on npm, so a release that
+      # failed part-way (e.g. SDK published, CLI rejected) can simply be re-run.
+      - name: Publish @corthos/corthography-sdk
+        run: |
+          v="$(node -p "require('./sdk/js/package.json').version")"
+          if npm view "@corthos/corthography-sdk@$v" version >/dev/null 2>&1; then
+            echo "@corthos/corthography-sdk@$v is already on npm; skipping"
+          else
+            npm publish --workspace @corthos/corthography-sdk --access public
+          fi
+      - name: Publish @corthos/corthography-cli
+        run: |
+          v="$(node -p "require('./cli/package.json').version")"
+          if npm view "@corthos/corthography-cli@$v" version >/dev/null 2>&1; then
+            echo "@corthos/corthography-cli@$v is already on npm; skipping"
+          else
+            npm publish --workspace @corthos/corthography-cli --access public
+          fi
