@@ -13,6 +13,13 @@ interface RunProgressLike {
   updatedAt?: string;
 }
 
+interface TemplateCommitLike {
+  repo: string;
+  ref: string;
+  sha: string;
+  resolvedAt?: string;
+}
+
 interface RunLike {
   runId: string;
   status: string;
@@ -24,6 +31,7 @@ interface RunLike {
   error?: string;
   currentPhase?: string;
   progress?: RunProgressLike;
+  templateCommits?: TemplateCommitLike[];
 }
 
 /** Compact relative age, e.g. "4s ago" / "3m ago" / "1.2h ago". */
@@ -53,6 +61,19 @@ export function formatProgressLine(run: RunLike): string | undefined {
   return `progress:     ${status} — ${parts.join(", ")}${age ? ` (updated ${age})` : ""}`;
 }
 
+/** One `commit:` line per template-repo ref the run resolved; none when the
+ * run reports no commits. The SHA is printed in full so it can be pasted into
+ * `--ref`. A ref that is itself the commit prints once, and the repo is shown
+ * only when the run spans more than one. */
+export function formatCommitLines(run: RunLike): string[] {
+  const commits = run.templateCommits ?? [];
+  const showRepo = new Set(commits.map((c) => c.repo)).size > 1;
+  return commits.map((c) => {
+    const what = c.ref === c.sha ? c.sha : `${c.ref} @ ${c.sha}`;
+    return `commit:       ${what}${showRepo ? ` (${c.repo})` : ""}`;
+  });
+}
+
 export function formatRunHumanReadable(run: RunLike): string {
   const lines = [
     `run_id:       ${run.runId}`,
@@ -64,6 +85,7 @@ export function formatRunHumanReadable(run: RunLike): string {
   if (run.currentPhase) lines.push(`phase:        ${run.currentPhase}`);
   const progressLine = formatProgressLine(run);
   if (progressLine) lines.push(progressLine);
+  lines.push(...formatCommitLines(run));
   lines.push(`started_at:   ${run.startedAt}`);
   if (run.completedAt) lines.push(`completed_at: ${run.completedAt}`);
   if (run.error) lines.push(`error:        ${run.error}`);

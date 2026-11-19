@@ -152,10 +152,24 @@ for the API's idempotency and timeout behavior.
 
 ## Pinning with `--ref`
 
-`--ref` accepts any value `git rev-parse` would accept inside the
-partner repo: a branch, a tag, or a full SHA. The engine clones the
-ref before resolving the template, so a stale clone cache is never
-the bug.
+`--ref` accepts a branch name, a tag, or a commit SHA of the partner
+repo; prefer the full 40-character SHA. Expressions like `HEAD~1` are
+rejected. The engine clones the ref before resolving the template, so
+a stale clone cache is never the bug.
+
+**One commit per run.** A run resolves each ref to a commit once, and
+every job of that run uses that commit. A push to the branch after the
+run started is not part of it; start a new run to pick it up.
+`corthography status <run_id>` shows the commit the run used:
+
+```
+commit:       my-feature-branch @ b36a443aa3cedd7c0aab7c45c9b8771b46ed0cdf
+```
+
+**Separate runs resolve separately.** `query` and `render` are two
+runs, so they can land on different commits if the branch moved in
+between. To hold them to one commit, pass the SHA from the first run's
+`commit:` line as `--ref` on the next.
 
 Common patterns:
 

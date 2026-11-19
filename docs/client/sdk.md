@@ -161,14 +161,40 @@ interface RunSummary {
   sfnExecutionArn?: string;
   outputPaths?: Record<string, string>;
   error?: string;
+  progress?: RunProgress;
+  templateCommits?: TemplateCommit[];
+}
+
+interface RunProgress {
+  phase?: string;
+  status?: string;
+  itemsFetched?: number;
+  chunksCreated?: number;
+  totalShards?: number;
+  updatedAt?: string;
+}
+
+interface TemplateCommit {
+  repo: string;        // host/owner/name of the template repo
+  ref: string;         // branch or tag, or the SHA when pinned to a commit
+  sha: string;         // full commit SHA the run used for that ref
+  resolvedAt?: string; // ISO 8601, UTC
 }
 ```
+
+`templateCommits` lists the commit each ref of your template repo
+resolved to for that run, oldest first. It is `undefined` until the
+run's first job has staged its templates (about a minute in) and on
+runs that recorded none. See
+[workflow.md § Pinning with `--ref`](./workflow.md#pinning-with---ref)
+for what the commit means.
 
 The full type set is exported from the package root:
 
 ```ts
 import type {
   ClientOptions, StartRunRequest, StartRunResponse, RunSummary,
+  RunProgress, TemplateCommit,
   ProjectListItem, TemplateListItem, HealthResponse,
   Workflow, Environment, RunStatus,
 } from "@corthos/corthography-sdk";

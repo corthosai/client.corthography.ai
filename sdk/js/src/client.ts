@@ -8,6 +8,7 @@ import type {
   RunSummary,
   StartRunRequest,
   StartRunResponse,
+  TemplateCommit,
   TemplateListItem,
 } from "./types.js";
 
@@ -187,7 +188,29 @@ function toRunSummary(raw: Record<string, unknown>): RunSummary {
     outputPaths: (raw.output_paths as Record<string, string> | undefined) ?? undefined,
     error: (raw.error as string | undefined) ?? undefined,
     progress: toRunProgress(raw.progress),
+    templateCommits: toTemplateCommits(raw.template_commits ?? raw.templateCommits),
   };
+}
+
+/** Map the API's `template_commits` list, keeping its order (oldest first).
+ * An entry without a string `repo`, `ref` and `sha` is left out rather than
+ * passed on half-filled; nothing usable (absent, `null`, empty) is `undefined`. */
+function toTemplateCommits(raw: unknown): TemplateCommit[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const text = (value: unknown): string | undefined =>
+    typeof value === "string" && value !== "" ? value : undefined;
+  const commits: TemplateCommit[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const c = entry as Record<string, unknown>;
+    const repo = text(c.repo);
+    const ref = text(c.ref);
+    const sha = text(c.sha);
+    if (!repo || !ref || !sha) continue;
+    const resolvedAt = text(c.resolved_at ?? c.resolvedAt);
+    commits.push(resolvedAt ? { repo, ref, sha, resolvedAt } : { repo, ref, sha });
+  }
+  return commits.length > 0 ? commits : undefined;
 }
 
 function toNumber(value: unknown): number | undefined {

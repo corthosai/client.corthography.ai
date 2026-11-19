@@ -48,6 +48,22 @@ export interface RunProgress {
   updatedAt?: string;
 }
 
+/** One ref of the partner's template repo that a run used, and the commit it
+ * resolved to. A run resolves each ref once and every job of that run uses
+ * the same commit, so a push made after the run started is not part of it —
+ * start a new run to pick it up. */
+export interface TemplateCommit {
+  /** The template repo, as `host/owner/name`. */
+  repo: string;
+  /** The ref that was resolved: a branch or tag name, or the commit SHA itself
+   * when the run was pinned to an exact commit. */
+  ref: string;
+  /** The full commit SHA the run used for that ref. */
+  sha: string;
+  /** When the run resolved the ref (ISO 8601, UTC). */
+  resolvedAt?: string;
+}
+
 export interface RunSummary {
   runId: string;
   partnerId: string;
@@ -62,6 +78,12 @@ export interface RunSummary {
   outputPaths?: Record<string, string>;
   error?: string;
   progress?: RunProgress;
+  /** The commit each template-repo ref of this run resolved to, oldest first.
+   * Usually one entry; a run started with a `templateRef` has a second one for
+   * the project config, which loads from the default ref. Absent until the
+   * run's first job has staged its templates (about a minute in), and on runs
+   * that recorded none. */
+  templateCommits?: TemplateCommit[];
 }
 
 export interface ProjectListItem {

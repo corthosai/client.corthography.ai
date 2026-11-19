@@ -23,6 +23,8 @@ corthography status <run_id> [--json] [--wait] [--wait-timeout <s>] [--poll-inte
 
 Output includes: workflow, target, environment, status, current_phase, started_at, completed_at, error, and a `progress` line when the engine reports it (live `items` for a single-job query; the shard fan-out for a sharded query, whose item count stays 0 until it finalizes).
 
+Once the run has staged its templates (about a minute in), the output also has one `commit:` line per ref of the partner template repo the run used, as `<ref> @ <full SHA>` (`templateCommits` in `--json`). A run keeps that commit for all of its jobs, so compare the SHA with the expected commit to tell whether the run included a push; a push made after the run started needs a new run.
+
 ### Polling option
 
 Without `--wait`, prints the current status once and exits. With `--wait`, the CLI polls internally and blocks until the run is terminal, then prints final status — emitting a live `progress` line as the run advances (deduped to changes only) so a long query isn't silent. This avoids burning agent context on a manual poll loop. Exit codes:

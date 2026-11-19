@@ -79,6 +79,22 @@ corthography status run-1714824742-a3f8c901
 Shows current phase, status, started/completed timestamps, and any
 output paths or error message. Use `--json` for the full payload.
 
+Once the run has staged its templates (about a minute in), the output
+also has a `commit:` line for each ref of your template repo the run
+used, with the commit it resolved to:
+
+```
+status:       succeeded
+commit:       my-branch @ b36a443aa3cedd7c0aab7c45c9b8771b46ed0cdf
+commit:       main @ eb534d675e61d824e39c2223bbf6126879fd364d
+```
+
+A run without `--ref` has one line. A run with `--ref` has two: the
+templates at that ref, and the project config, which loads from the
+default ref. A ref that is itself a commit SHA prints the SHA alone.
+In `--json` the same data is `templateCommits`. See
+[workflow.md § Pinning with `--ref`](./workflow.md#pinning-with---ref).
+
 ### `list`
 
 ```bash

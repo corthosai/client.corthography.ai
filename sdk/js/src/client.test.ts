@@ -266,3 +266,92 @@ describe("PressClient", () => {
     await expect(client.health()).rejects.toThrow(/aborted/);
   });
 });
+
+describe("PressClient template commits", () => {
+  const SHA = "59e323b56617e6c12b18e64ad4bf658818bcff47";
+  const OTHER_SHA = "0123456789abcdef0123456789abcdef01234567";
+  const REPO = "github.com/your-org/your-templates";
+
+  const runBody = (extra: Record<string, unknown>): Record<string, unknown> => ({
+    run_id: "r-20",
+    partner_id: "dms",
+    workflow: "template-render",
+    target: "dms/c/t/n+s",
+    environment: "test",
+    status: "succeeded",
+    started_at: "2026-11-18T16:03:00Z",
+    ...extra,
+  });
+
+  const clientReturning = (body: unknown): PressClient =>
+    new PressClient({
+      token: "x",
+      fetch: mockFetch(
+        async () =>
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+      ),
+    });
+
+  it("maps template_commits snake_case → camelCase, keeping the API's order", async () => {
+    const run = await clientReturning(
+      runBody({
+        template_commits: [
+          { repo: REPO, ref: "main", sha: SHA, resolved_at: "2026-11-18T16:03:59Z" },
+          { repo: REPO, ref: OTHER_SHA, sha: OTHER_SHA, resolved_at: "2026-11-18T16:04:40Z" },
+        ],
+      }),
+    ).getRun("r-20");
+    expect(run.templateCommits).toEqual([
+      { repo: REPO, ref: "main", sha: SHA, resolvedAt: "2026-11-18T16:03:59Z" },
+      { repo: REPO, ref: OTHER_SHA, sha: OTHER_SHA, resolvedAt: "2026-11-18T16:04:40Z" },
+    ]);
+  });
+
+  it.each([
+    ["absent", {}],
+    ["null", { template_commits: null }],
+    ["an empty list", { template_commits: [] }],
+    ["not a list", { template_commits: { main: SHA } }],
+  ])("is undefined when template_commits is %s", async (_label, extra) => {
+    const run = await clientReturning(runBody(extra)).getRun("r-20");
+    expect(run.templateCommits).toBeUndefined();
+    expect(run.status).toBe("succeeded");
+  });
+
+  it("leaves out entries without a string repo, ref and sha instead of throwing", async () => {
+    const run = await clientReturning(
+      runBody({
+        template_commits: [
+          null,
+          "main",
+          { repo: REPO, ref: "main" },
+          { repo: REPO, ref: 7, sha: SHA },
+          { repo: "", ref: "main", sha: SHA },
+          { repo: REPO, ref: "main", sha: SHA, resolved_at: null },
+        ],
+      }),
+    ).getRun("r-20");
+    expect(run.templateCommits).toEqual([{ repo: REPO, ref: "main", sha: SHA }]);
+  });
+
+  it("is undefined when no entry is usable", async () => {
+    const run = await clientReturning(runBody({ template_commits: [{ repo: REPO }] })).getRun("r-20");
+    expect(run.templateCommits).toBeUndefined();
+  });
+
+  it("maps template_commits for each run of listRuns", async () => {
+    const runs = await clientReturning({
+      runs: [
+        runBody({ run_id: "r-new", template_commits: [{ repo: REPO, ref: "main", sha: SHA }] }),
+        runBody({ run_id: "r-old", template_commits: null }),
+      ],
+    }).listRuns();
+    expect(runs.map((r) => [r.runId, r.templateCommits?.[0]?.sha])).toEqual([
+      ["r-new", SHA],
+      ["r-old", undefined],
+    ]);
+  });
+});
