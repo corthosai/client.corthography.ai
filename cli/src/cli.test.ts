@@ -251,3 +251,60 @@ describe("runCli", () => {
     expect(out.join("\n")).toContain("- a");
   });
 });
+
+describe("runCli template commits", () => {
+  const SHA = "59e323b56617e6c12b18e64ad4bf658818bcff47";
+  const run = (runId: string, templateCommits?: unknown) => ({
+    runId,
+    partnerId: "dms",
+    workflow: "template-render",
+    target: "dms/c/t/n+s",
+    environment: "test",
+    status: "succeeded",
+    startedAt: "2026-11-18T16:03:00Z",
+    ...(templateCommits ? { templateCommits } : {}),
+  });
+  const commits = [{ repo: "github.com/your-org/your-templates", ref: "main", sha: SHA }];
+  const deps = (client: unknown, out: string[]) => ({
+    env: TEST_ENV,
+    makeClient: () => client as never,
+    out: (s: string) => out.push(s),
+    credentialsPath: "/non-existent",
+    fractaryRoot: "",
+  });
+
+  it("status prints a commit line when the run reports commits", async () => {
+    const out: string[] = [];
+    const client = makeStubClient({ getRun: vi.fn().mockResolvedValue(run("r-c1", commits)) });
+    const code = await runCli(["node", "corthography", "status", "r-c1"], deps(client, out));
+    expect(code).toBe(0);
+    expect(out.join("\n")).toContain(`commit:       main @ ${SHA}`);
+  });
+
+  it("status prints no commit line when the run reports none", async () => {
+    const out: string[] = [];
+    const client = makeStubClient({ getRun: vi.fn().mockResolvedValue(run("r-c2")) });
+    await runCli(["node", "corthography", "status", "r-c2"], deps(client, out));
+    expect(out.join("\n")).not.toContain("commit:");
+  });
+
+  it("status --json includes templateCommits", async () => {
+    const out: string[] = [];
+    const client = makeStubClient({ getRun: vi.fn().mockResolvedValue(run("r-c3", commits)) });
+    await runCli(["node", "corthography", "--json", "status", "r-c3"], deps(client, out));
+    expect(JSON.parse(out.join("")).templateCommits).toEqual(commits);
+  });
+
+  it("list prints the commit line under the run it belongs to", async () => {
+    const out: string[] = [];
+    const client = makeStubClient({
+      listRuns: vi.fn().mockResolvedValue([run("r-new", commits), run("r-old")]),
+    });
+    await runCli(["node", "corthography", "list"], deps(client, out));
+    const [newer, older] = out.join("\n").split("\n---\n");
+    expect(newer).toContain("r-new");
+    expect(newer).toContain(`commit:       main @ ${SHA}`);
+    expect(older).toContain("r-old");
+    expect(older).not.toContain("commit:");
+  });
+});

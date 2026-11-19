@@ -5,6 +5,7 @@ export type {
   StartRunResponse,
   RunSummary,
   RunProgress,
+  TemplateCommit,
   ProjectListItem,
   TemplateListItem,
   HealthResponse,
