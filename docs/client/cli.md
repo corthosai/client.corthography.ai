@@ -9,10 +9,11 @@ order: 2
 # CLI reference
 
 The `corthography` binary ships from `@corthos/corthography-cli` and
-wraps the [SDK](./sdk.md). It exposes nine subcommands grouped into
-three categories: **start a run** (`query`, `render`, `publish`),
-**inspect runs** (`status`, `list`, `logs`, `approve`), and **discover
-scope** (`projects`, `templates`).
+wraps the [SDK](./sdk.md). It exposes eleven subcommands grouped into
+three categories: **start a run** (`query`, `render`, `publish`, and
+the chained `query-render`, `query-render-publish`), **inspect runs**
+(`status`, `list`, `logs`, `approve`), and **discover scope**
+(`projects`, `templates`).
 
 For install and credentials, see [install.md](./install.md).
 
@@ -67,6 +68,57 @@ approver must release them via `corthography approve` (see below).
 See [../press/governance.md](../press/governance.md) for the gate
 mechanics and [../api/approval-gate.md](../api/approval-gate.md) for
 the API-side flow.
+
+## Chained commands
+
+A chained command runs several stages as **one run**: one run id, one
+`status`, one entry in `list`. Both take the same flags as `query`.
+
+Use one when the stages must use the same commit of your template
+repo. A run resolves each ref to a commit once, so every stage of a
+chained run renders from the commit it queried with, even if the branch
+moves while it runs. Separate `query` and `render` runs each resolve the
+ref for themselves (see
+[workflow.md § Pinning with `--ref`](./workflow.md#pinning-with---ref)).
+
+### `query-render <target>`
+
+Stages 1 and 2: query, then render.
+
+```bash
+corthography query-render dms/education-niche/colleges/overview+computer-science-degree --ref my-branch
+# → started query-render: run_id=run-1714824742-a3f8c901
+```
+
+If the query stage fails, the run fails and nothing is rendered.
+
+### `query-render-publish <target>`
+
+Stages 1, 2 and 3: query, render, then publish.
+
+```bash
+corthography query-render-publish dms/education-niche/colleges/overview+computer-science-degree
+corthography query-render-publish dms/education-niche/colleges/overview+computer-science-degree --env prod
+```
+
+With `--env prod` the run queries and renders, then pauses at the
+release gate (`awaiting_approval`) before the production publish, the
+same gate as `publish --env prod`. Release it with
+`corthography approve <run_id>`.
+
+### Waiting on a chained run
+
+A chained run takes as long as its stages together. `--wait` gives up
+after 10 minutes by default and exits `3` with the run still going, so
+pass a larger budget:
+
+```bash
+corthography query-render <target> --wait --wait-timeout 3600
+```
+
+These are not the plugin's `template-query-render-publish` FABER
+workflow, which starts a separate run per stage with review steps
+between them — see [extending-workflows.md](./extending-workflows.md).
 
 ## Run-inspection commands
 

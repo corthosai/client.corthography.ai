@@ -45,9 +45,18 @@ function formatAge(iso?: string): string | undefined {
   return `${(s / 3600).toFixed(1)}h ago`;
 }
 
+const CHAINED_WORKFLOWS: ReadonlySet<string> = new Set([
+  "template-query-render",
+  "template-query-render-publish",
+]);
+
 /** One-line live progress, or undefined when a run reports none. Shows the
  * per-entity count (live for single-job queries; 0-until-finalize for sharded,
- * where `totalShards` conveys the fan-out instead). */
+ * where `totalShards` conveys the fan-out instead).
+ *
+ * Progress belongs to one stage. In a chained run the query stage's
+ * "completed" stays on the record while later stages run, so the line names
+ * the stage ("query completed") instead of reading as if the run were done. */
 export function formatProgressLine(run: RunLike): string | undefined {
   const p = run.progress;
   if (!p) return undefined;
@@ -57,7 +66,8 @@ export function formatProgressLine(run: RunLike): string | undefined {
   if (parts.length === 0 && p.phase) parts.push(`${p.phase} phase`);
   if (parts.length === 0) return undefined;
   const age = formatAge(p.updatedAt);
-  const status = p.status ?? run.status;
+  const stageStatus = p.status ?? run.status;
+  const status = CHAINED_WORKFLOWS.has(run.workflow) && p.phase ? `${p.phase} ${stageStatus}` : stageStatus;
   return `progress:     ${status} — ${parts.join(", ")}${age ? ` (updated ${age})` : ""}`;
 }
 

@@ -53,7 +53,7 @@ Start a new workflow run.
 
 ```ts
 const { runId, status } = await client.startRun({
-  workflow: "template-render",   // "template-query" | "template-render" | "template-publish"
+  workflow: "template-render",   // any `Workflow` — see Types
   target: "dms/education-niche/colleges/overview+computer-science-degree",
   environment: "test",            // "test" | "prod" — defaults to "test"
   templateRef: "v1.4.0",          // optional partner-repo git ref
@@ -62,6 +62,13 @@ const { runId, status } = await client.startRun({
 ```
 
 `POST /v1/runs` underneath. Returns `{ runId, status: "queued" }`.
+
+`"template-query-render"` and `"template-query-render-publish"` are
+chained workflows: the stages run in order as a single run, so one
+`runId` covers all of them and every stage uses the same commit of the
+template repo. `"template-query-render-publish"` with
+`environment: "prod"` pauses at `awaiting_approval` before the
+production publish, like `"template-publish"`.
 
 ### `getRun(runId)`
 
@@ -135,7 +142,9 @@ const { status, version } = await client.health();
 ## Types
 
 ```ts
-type Workflow = "template-query" | "template-render" | "template-publish";
+type Workflow =
+  | "template-query" | "template-render" | "template-publish"
+  | "template-query-render" | "template-query-render-publish";   // chained: one run
 type Environment = "test" | "prod";
 type RunStatus =
   | "queued" | "running" | "awaiting_approval"

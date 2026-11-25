@@ -252,6 +252,113 @@ describe("runCli", () => {
   });
 });
 
+describe("runCli chained workflows", () => {
+  const deps = (client: unknown, out: string[]) => ({
+    env: TEST_ENV,
+    makeClient: () => client as never,
+    out: (s: string) => out.push(s),
+    credentialsPath: "/non-existent",
+    fractaryRoot: "",
+  });
+  const summary = (workflow: string, status: string) => ({
+    runId: "r-chain",
+    partnerId: "dms",
+    workflow,
+    target: "dms/c/t/n+slug",
+    environment: "prod",
+    status,
+    startedAt: "2026-11-25T00:00:00Z",
+  });
+
+  it.each([
+    ["query-render", "template-query-render"],
+    ["query-render-publish", "template-query-render-publish"],
+  ])("%s starts one %s run", async (command, workflow) => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-chain", status: "queued" });
+    const out: string[] = [];
+    const code = await runCli(
+      ["node", "corthography", command, "dms/c/t/n+slug", "--env", "test", "--ref", "my-branch"],
+      deps(makeStubClient({ startRun }), out),
+    );
+    expect(code).toBe(0);
+    expect(startRun).toHaveBeenCalledTimes(1);
+    expect(startRun).toHaveBeenCalledWith({
+      workflow,
+      target: "dms/c/t/n+slug",
+      environment: "test",
+      templateRef: "my-branch",
+    });
+    expect(out.join("\n")).toBe(`started ${command}: run_id=r-chain`);
+  });
+
+  it("query-render is not mistaken for query", async () => {
+    // Both commands share a prefix; each must dispatch its own workflow.
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-q", status: "queued" });
+    const out: string[] = [];
+    await runCli(["node", "corthography", "query", "dms/c/t/n+slug"], deps(makeStubClient({ startRun }), out));
+    await runCli(["node", "corthography", "query-render", "dms/c/t/n+slug"], deps(makeStubClient({ startRun }), out));
+    expect(startRun.mock.calls.map(([req]) => req.workflow)).toEqual(["template-query", "template-query-render"]);
+  });
+
+  it("query-render prepends CORTHOGRAPHY_OWNER to a 3-segment target", async () => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-o", status: "queued" });
+    const out: string[] = [];
+    await runCli(["node", "corthography", "query-render", "education-niche/colleges/overview+cs"], {
+      ...deps(makeStubClient({ startRun }), out),
+      env: { ...TEST_ENV, CORTHOGRAPHY_OWNER: "dms" },
+    });
+    expect(startRun).toHaveBeenCalledWith(
+      expect.objectContaining({ target: "dms/education-niche/colleges/overview+cs" }),
+    );
+  });
+
+  it("query-render --wait exits 0 when the chained run succeeds", async () => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-chain", status: "queued" });
+    const states = ["running", "running", "succeeded"];
+    let i = 0;
+    const getRun = vi.fn().mockImplementation(() =>
+      Promise.resolve(summary("template-query-render", states[Math.min(i++, states.length - 1)])),
+    );
+    const out: string[] = [];
+    const code = await runCli(
+      ["node", "corthography", "query-render", "dms/c/t/n+slug", "--wait", "--poll-interval", "0.001", "--wait-timeout", "5"],
+      deps(makeStubClient({ startRun, getRun }), out),
+    );
+    expect(code).toBe(0);
+    expect(out.join("\n")).toContain("workflow:     template-query-render");
+    expect(out.join("\n")).toContain("status:       succeeded");
+  });
+
+  it("query-render-publish --env prod --wait exits 2 at the release gate", async () => {
+    const startRun = vi.fn().mockResolvedValue({ runId: "r-chain", status: "queued" });
+    const states = ["running", "awaiting_approval"];
+    let i = 0;
+    const getRun = vi.fn().mockImplementation(() =>
+      Promise.resolve(summary("template-query-render-publish", states[Math.min(i++, states.length - 1)])),
+    );
+    const out: string[] = [];
+    const code = await runCli(
+      [
+        "node",
+        "corthography",
+        "query-render-publish",
+        "dms/c/t/n+slug",
+        "--env",
+        "prod",
+        "--wait",
+        "--poll-interval",
+        "0.001",
+        "--wait-timeout",
+        "5",
+      ],
+      deps(makeStubClient({ startRun, getRun }), out),
+    );
+    expect(code).toBe(2);
+    expect(startRun).toHaveBeenCalledWith(expect.objectContaining({ environment: "prod" }));
+    expect(out.join("\n")).toContain("corthography approve r-chain");
+  });
+});
+
 describe("runCli template commits", () => {
   const SHA = "59e323b56617e6c12b18e64ad4bf658818bcff47";
   const run = (runId: string, templateCommits?: unknown) => ({

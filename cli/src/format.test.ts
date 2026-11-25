@@ -33,6 +33,26 @@ describe("formatProgressLine", () => {
     expect(line).toContain("0 items");
     expect(line).toContain("12 shards");
   });
+
+  it("names the stage in a chained run, where a finished stage's progress outlives it", () => {
+    // What the API returns while the render stage of a query-render run is
+    // going: the run is running, and the progress is the query stage's.
+    const line = formatProgressLine({
+      ...base,
+      workflow: "template-query-render",
+      status: "running",
+      progress: { phase: "query", status: "completed", itemsFetched: 1 },
+    });
+    expect(line).toBe("progress:     query completed — 1 items");
+  });
+
+  it("leaves a single-stage run's progress line as it was", () => {
+    const line = formatProgressLine({
+      ...base,
+      progress: { phase: "query", status: "completed", itemsFetched: 1 },
+    });
+    expect(line).toBe("progress:     completed — 1 items");
+  });
 });
 
 describe("formatRunHumanReadable", () => {

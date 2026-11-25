@@ -168,8 +168,13 @@ commit:       my-feature-branch @ b36a443aa3cedd7c0aab7c45c9b8771b46ed0cdf
 
 **Separate runs resolve separately.** `query` and `render` are two
 runs, so they can land on different commits if the branch moved in
-between. To hold them to one commit, pass the SHA from the first run's
-`commit:` line as `--ref` on the next.
+between. To hold them to one commit, either:
+
+- run them as one run with `corthography query-render` (or
+  `query-render-publish`) — see
+  [cli.md § Chained commands](./cli.md#chained-commands); or
+- pass the SHA from the first run's `commit:` line as `--ref` on the
+  next.
 
 Common patterns:
 
@@ -203,6 +208,15 @@ corthography publish <target> --env test
 Each stage starts a separate run; chain them by polling `status`
 between calls (or use the SDK to do this synchronously — see
 [sdk.md § Polling pattern](./sdk.md#polling-pattern)).
+
+Or as a single run, with every stage on the same template commit:
+
+```bash
+corthography query-render-publish <target> --env test --wait --wait-timeout 3600
+```
+
+Use the separate runs when you want to look at the data or the render
+before the next stage starts; a chained run goes straight through.
 
 **Batch over projects**:
 

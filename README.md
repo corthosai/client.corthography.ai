@@ -129,13 +129,16 @@ for an introduction.
 
 ### Polling (`--wait`)
 
-`query`, `render`, `publish`, and `status` all accept `--wait` to block the bash invocation until the run reaches a terminal state. This collapses an agent-side poll loop into a single input/output pair — the agent sees one Bash call regardless of how long the run takes, which is much cheaper in context tokens.
+`query`, `render`, `publish`, the chained `query-render` and `query-render-publish`, and `status` all accept `--wait` to block the bash invocation until the run reaches a terminal state. This collapses an agent-side poll loop into a single input/output pair — the agent sees one Bash call regardless of how long the run takes, which is much cheaper in context tokens.
 
 ```bash
 corthography query <target> --wait                    # default 10-minute budget
 corthography render <target> --wait --wait-timeout 3600   # longer terminal use
 corthography status <run_id> --wait                   # block on an existing run
+corthography query-render <target> --wait --wait-timeout 3600   # two stages, one run
 ```
+
+`query-render` and `query-render-publish` run their stages as a single run, so every stage uses the same commit of your template repo. They are CLI commands only (no slash command), and they take as long as their stages together, so give `--wait` a larger `--wait-timeout`. See [docs/client/cli.md § Chained commands](./docs/client/cli.md#chained-commands).
 
 Exit codes when `--wait` is set:
 

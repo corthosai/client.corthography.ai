@@ -40,6 +40,34 @@ describe("PressClient", () => {
     expect(seen.method).toBe("POST");
   });
 
+  it.each(["template-query-render", "template-query-render-publish"] as const)(
+    "starts a chained %s run, sending the workflow name and ref unchanged",
+    async (workflow) => {
+      let sent: Record<string, unknown> = {};
+      const fetchImpl = mockFetch(async (req) => {
+        sent = (await req.json()) as Record<string, unknown>;
+        return new Response(JSON.stringify({ run_id: "r-chain", status: "queued" }), {
+          status: 202,
+          headers: { "content-type": "application/json" },
+        });
+      });
+      const client = new PressClient({ token: "T", baseUrl: "https://api.example/v1", fetch: fetchImpl });
+      const result = await client.startRun({
+        workflow,
+        target: "dms/c/t/n+slug",
+        environment: "prod",
+        templateRef: "my-branch",
+      });
+      expect(result).toEqual({ runId: "r-chain", status: "queued" });
+      expect(sent).toEqual({
+        workflow,
+        target: "dms/c/t/n+slug",
+        environment: "prod",
+        template_ref: "my-branch",
+      });
+    },
+  );
+
   it("does not send the token on /v1/health", async () => {
     let authHeader: string | null = "STILL_HERE";
     const fetchImpl = mockFetch(async (req) => {
