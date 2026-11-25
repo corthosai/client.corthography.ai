@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
-import { PressClient } from "@corthos/corthography-sdk";
+import { PressClient, type Workflow } from "@corthos/corthography-sdk";
 import { resolveConfig } from "./config.js";
 import { resolveTarget } from "./target.js";
 import { formatJson, formatProgressLine, formatRunHumanReadable } from "./format.js";
@@ -133,11 +133,9 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     pendingExitCode = exitCodeForReason(reason, run.status);
   };
 
-  const startCommand = (
-    name: "query" | "render" | "publish",
-    workflow: "template-query" | "template-render" | "template-publish",
-    description: string,
-  ): Command =>
+  // One command per workflow; the command name is the workflow name without
+  // its `template-` prefix.
+  const startCommand = (name: string, workflow: Workflow, description: string): Command =>
     program
       .command(`${name} <target>`)
       .description(description)
@@ -172,6 +170,19 @@ export async function runCli(argv: readonly string[], deps: CliDeps = {}): Promi
     "publish",
     "template-publish",
     "Stage 3: distribute rendered content to destination (test); --env prod requires approval",
+  );
+  // Chained workflows: several stages as ONE run, so every stage uses the same
+  // commit of the template repo. They take longer than a single stage — pass a
+  // larger --wait-timeout with --wait.
+  startCommand(
+    "query-render",
+    "template-query-render",
+    "Stages 1-2 as one run: query, then render, from the same template commit",
+  );
+  startCommand(
+    "query-render-publish",
+    "template-query-render-publish",
+    "Stages 1-3 as one run: query, render, then publish; --env prod requires approval before the prod publish",
   );
 
   program

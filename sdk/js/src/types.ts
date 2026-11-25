@@ -1,6 +1,14 @@
 /** SDK option types — matches the api.corthography.ai response schemas. */
 
-export type Workflow = "template-query" | "template-render" | "template-publish";
+/** A workflow the API can run. The first three are one pipeline stage each.
+ * The last two are chained: several stages in a single run, so every stage
+ * uses the same commit of the template repo (see `TemplateCommit`). */
+export type Workflow =
+  | "template-query"
+  | "template-render"
+  | "template-publish"
+  | "template-query-render"
+  | "template-query-render-publish";
 export type Environment = "test" | "prod";
 export type RunStatus =
   | "queued"
